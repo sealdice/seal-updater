@@ -1,0 +1,21 @@
+[package]
+name = "seal-updater"
+version = "0.1.0"
+authors = ["檀轶步棋"]
+edition = "2021"
+
+# To minimize binary size
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+clap = { version = "4.4.3", features = ["derive"] }
+sysinfo = "0.29.10"
+
+# From 0.10.0, `zip` changes its APIs fundamentally.
+zip = "0.6.6"
+tar = "0.4.40"
+flate2 = "1.0.27"
