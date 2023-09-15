@@ -1,10 +1,8 @@
 use std::error::Error;
-use std::path::Path;
-use std::time::Duration;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use crate::cli::CliArgs;
 
-mod depress;
+mod decompress;
 mod progress;
 
 pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
@@ -13,7 +11,7 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
     if let Some(pid) = args.pid {
         wait_exit_pid(pid, &mut sys);
     }
-    depress::depress(&args.upgrade, "./rr")?;
+    decompress::decompress(&args.upgrade, "./rr")?;
 
     Ok(())
 }

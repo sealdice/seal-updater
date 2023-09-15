@@ -7,7 +7,7 @@ use flate2::read;
 use zip::ZipArchive;
 use crate::lib::progress;
 
-pub fn depress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     if path.as_ref().as_os_str().is_empty() {
         Err("指向更新文件路径为空")?;
     }
@@ -20,17 +20,17 @@ pub fn depress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<(), B
         .ok_or("无法将文件扩展名转换为 UTF-8 编码")?;
     print!("正在解压 ");
     match ext {
-        "zip" => depress_zip(file, target.as_ref())?,
+        "zip" => unzip(file, target.as_ref())?,
         "gz" => {
             let decoder = read::GzDecoder::new(file);
-            depress_tar(decoder, target.as_ref())?
+            untar(decoder, target.as_ref())?
         },
         _ => Err(format!("压缩文件具有未知扩展名 {}", ext))?
     }
     Ok(())
 }
 
-fn depress_zip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
+fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
     let mut archive = ZipArchive::new(file)?;
     let arc_len = archive.len();
     for i in 0..arc_len {
@@ -52,7 +52,7 @@ fn depress_zip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn depress_tar(reader: impl Read, target: &Path) -> Result<(), Box<dyn Error>> {
+fn untar(reader: impl Read, target: &Path) -> Result<(), Box<dyn Error>> {
     let is_path_safe = |com: Components| {
         let normals: Vec<Component> = com
             .into_iter()
