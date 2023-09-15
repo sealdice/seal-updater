@@ -20,14 +20,19 @@ pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<()
         .ok_or("无法将文件扩展名转换为 UTF-8 编码")?;
     print!("正在解压 ");
     match ext {
-        "zip" => unzip(file, target.as_ref())?,
+        "zip" => unzip(file, target.as_ref()),
         "gz" => {
             let decoder = read::GzDecoder::new(file);
-            untar(decoder, target.as_ref())?
+            let (total, show) = match get_tar_count(decoder) {
+                Ok(t) => (t, true),
+                Err(_) => (0, false)
+            };
+            let file = File::open(path.as_ref())?;
+            let decoder = read::GzDecoder::new(file);
+            untar(decoder, target.as_ref(), show, total)
         },
         _ => Err(format!("压缩文件具有未知扩展名 {}", ext))?
     }
-    Ok(())
 }
 
 fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
@@ -52,7 +57,12 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn untar(reader: impl Read, target: &Path) -> Result<(), Box<dyn Error>> {
+fn get_tar_count(reader: impl Read) -> Result<usize, Box<dyn Error>> {
+    let mut archive = tar::Archive::new(reader);
+    Ok(archive.entries()?.count())
+}
+
+fn untar(mut reader: impl Read, target: &Path, show_prog: bool, total: usize) -> Result<(), Box<dyn Error>> {
     let is_path_safe = |com: Components| {
         let normals: Vec<Component> = com
             .into_iter()
@@ -62,12 +72,6 @@ fn untar(reader: impl Read, target: &Path) -> Result<(), Box<dyn Error>> {
     };
 
     let mut archive = tar::Archive::new(reader);
-    let total = {
-        let entries = archive.entries()?;
-        let collected: Vec<_> = entries.collect();
-        collected.len()
-    };
-
     for (i, entry) in archive.entries()?.enumerate() {
         let mut tar_file = entry?;
         let name = tar_file.path()?;
@@ -81,9 +85,13 @@ fn untar(reader: impl Read, target: &Path) -> Result<(), Box<dyn Error>> {
                 fs::create_dir_all(parent)?;
             }
         }
-        progress::print_progress(i+1, total);
-        let mut out = File::create(&dest)?;
-        io::copy(&mut tar_file, &mut out)?;
+        if !dest.is_dir() {
+            let mut out = File::create(&dest)?;
+            io::copy(&mut tar_file, &mut out)?;
+        }
+        if show_prog {
+            progress::print_progress(i+1, total);
+        }
     }
     Ok(())
 }

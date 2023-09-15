@@ -11,7 +11,8 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
     if let Some(pid) = args.pid {
         wait_exit_pid(pid, &mut sys);
     }
-    decompress::decompress(&args.upgrade, "./rr")?;
+
+    decompress::decompress(&args.upgrade, &args.dest)?;
 
     Ok(())
 }
