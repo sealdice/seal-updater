@@ -25,7 +25,7 @@ fn main() {
         Command::new("./sealdice-core").exec();
     } else {
         Command::new("cmd")
-            .args(["/C", "start", "", "sealdice-core"])
+            .args(["/C", "start", "", "sealdice-core.exe"])
             .exec();
     }
 }

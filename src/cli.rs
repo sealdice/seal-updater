@@ -8,6 +8,4 @@ pub struct CliArgs {
     /// Caller's PID
     #[arg(long = "pid")]
     pub pid: u32,
-    #[arg(long, default_value_t = String::new())]
-    pub dest: String
 }

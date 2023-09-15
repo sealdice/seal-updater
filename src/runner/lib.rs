@@ -12,7 +12,7 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
         wait_exit_pid(args.pid, &mut sys);
     }
 
-    decompress::decompress(&args.upgrade, &args.dest)?;
+    decompress::decompress(&args.upgrade, "")?;
     println!("{}\x1b[32m成功! \x1b[0m ", "\x08".repeat(7));
 
     Ok(())
