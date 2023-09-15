@@ -18,7 +18,7 @@ pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<()
         .to_ascii_lowercase();
     let ext = lower.to_str()
         .ok_or("无法将文件扩展名转换为 UTF-8 编码")?;
-    print!("正在解压  ");
+    print!("正在解压…  ");
     match ext {
         "zip" => unzip(file, target.as_ref()),
         "gz" => {

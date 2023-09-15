@@ -7,9 +7,9 @@ mod progress;
 
 pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
     let mut sys = System::new_all();
-    println!("等待海豹主进程关闭……");
-    if let Some(pid) = args.pid {
-        wait_exit_pid(pid, &mut sys);
+    println!("等待海豹主进程关闭…");
+    if args.pid != 0 {
+        wait_exit_pid(args.pid, &mut sys);
     }
 
     decompress::decompress(&args.upgrade, &args.dest)?;
