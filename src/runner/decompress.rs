@@ -2,7 +2,7 @@ use std::error::Error;
 use std::{fs, io};
 use std::fs::File;
 use std::io::Read;
-use std::path::{Component, Components, Path};
+use std::path::{Component, Components, Path, PathBuf};
 use flate2::read;
 use zip::ZipArchive;
 use crate::lib::progress;
@@ -18,7 +18,7 @@ pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<()
         .to_ascii_lowercase();
     let ext = lower.to_str()
         .ok_or("无法将文件扩展名转换为 UTF-8 编码")?;
-    print!("正在解压 ");
+    print!("正在解压  ");
     match ext {
         "zip" => unzip(file, target.as_ref()),
         "gz" => {
@@ -44,14 +44,8 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
         let name = zip_file.enclosed_name()
             .ok_or("文件名不安全，可能导致 zip slip")?;
         let dest = target.join(name);
-        if let Some(parent) = dest.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent)?;
-            }
-        }
         progress::print_progress(i+1, arc_len);
-        let mut out = File::create(&dest)?;
-        io::copy(&mut zip_file, &mut out)?;
+        make_file(&mut zip_file, &dest)?;
     }
 
     Ok(())
@@ -62,7 +56,7 @@ fn get_tar_count(reader: impl Read) -> Result<usize, Box<dyn Error>> {
     Ok(archive.entries()?.count())
 }
 
-fn untar(mut reader: impl Read, target: &Path, show_prog: bool, total: usize) -> Result<(), Box<dyn Error>> {
+fn untar(reader: impl Read, target: &Path, show_prog: bool, total: usize) -> Result<(), Box<dyn Error>> {
     let is_path_safe = |com: Components| {
         let normals: Vec<Component> = com
             .into_iter()
@@ -80,18 +74,25 @@ fn untar(mut reader: impl Read, target: &Path, show_prog: bool, total: usize) ->
             Err("文件名不安全，可能导致 slip")?;
         }
         let dest = target.join(name);
-        if let Some(parent) = dest.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent)?;
-            }
-        }
-        if !dest.is_dir() {
-            let mut out = File::create(&dest)?;
-            io::copy(&mut tar_file, &mut out)?;
-        }
         if show_prog {
             progress::print_progress(i+1, total);
         }
+        make_file(&mut tar_file, &dest)?;
+    }
+    Ok(())
+}
+
+fn make_file(mut source: &mut impl Read, dest: &PathBuf) -> Result<(), Box<dyn Error>> {
+    if let Some(parent) = dest.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    if dest.is_dir() || dest.to_string_lossy().ends_with("/") {
+        fs::create_dir_all(dest)?;
+    } else {
+        let mut out = File::create(dest)?;
+        io::copy(&mut source, &mut out)?;
     }
     Ok(())
 }

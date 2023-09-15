@@ -13,6 +13,7 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
     }
 
     decompress::decompress(&args.upgrade, &args.dest)?;
+    println!("{}\x1b[32m成功! \x1b[0m ", "\x08".repeat(7));
 
     Ok(())
 }

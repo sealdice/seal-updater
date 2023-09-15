@@ -6,11 +6,11 @@ pub fn print_progress(prog: usize, total: usize) {
     let last = if prog <= 1 {
         String::new()
     } else {
-        format!("{:.1}%", ((prog - 1) as f64 / total as f64) * 100.0)
+        format!("{:.1}% ({}/{})", ((prog - 1) as f64 / total as f64) * 100.0, prog, total)
     };
 
     print!("{}", "\x08".repeat(last.len()));
     io::stdout().flush().unwrap();
-    print!("{:.1}%", percentage);
+    print!("{:.1}% ({}/{})", percentage, prog, total);
     io::stdout().flush().unwrap();
 }
