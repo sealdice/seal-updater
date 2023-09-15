@@ -17,15 +17,21 @@ fn main() {
         return;
     }
 
+    if args.debug {
+        return;
+    }
+
     println!("\x1b[33m海豹，启动！\x1b[0m\n");
     io::stdout().flush().unwrap();
-    if !cfg!(windows) {
+    let err = if !cfg!(windows) {
         Command::new("chmod").args(["+x", "./sealdice-core"]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
-        Command::new("./sealdice-core").exec();
+        Command::new("./sealdice-core").exec()
     } else {
+        thread::sleep(Duration::from_secs(2));
         Command::new("cmd")
             .args(["/C", "start", "", "sealdice-core.exe"])
-            .exec();
-    }
+            .exec()
+    };
+    println!("\x1b[31m启动失败：{}\x1b[0m\n", err);
 }

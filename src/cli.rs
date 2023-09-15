@@ -8,4 +8,7 @@ pub struct CliArgs {
     /// Caller's PID
     #[arg(long = "pid")]
     pub pid: u32,
+    /// Debug: Do not start main process
+    #[arg(short)]
+    pub debug: bool
 }

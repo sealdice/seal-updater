@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::fs;
+use std::path::Path;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use crate::cli::CliArgs;
 
@@ -12,8 +14,12 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
         wait_exit_pid(args.pid, &mut sys);
     }
 
+    if Path::new("./sealdice-core").exists() {
+        fs::rename("./sealdice-core", "./sealdice-core_old")?;
+    }
+
     decompress::decompress(&args.upgrade, "")?;
-    println!("{}\x1b[32m成功! \x1b[0m ", "\x08".repeat(7));
+    println!("\r\x1b[32m解压成功!\x1b[0m{}", " ".repeat(7));
 
     Ok(())
 }
