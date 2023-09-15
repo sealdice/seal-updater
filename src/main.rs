@@ -6,8 +6,12 @@ mod cli;
 mod lib;
 
 fn main() {
-    let args = CliArgs::parse();
+    //let args = CliArgs::parse();
+    let args = CliArgs {
+        upgrade: String::new(),
+        pid: None
+    };
     if let Err(err) = lib::run_upgrade(&args) {
-        eprintln!("\033[31m出现错误：{}\033[0m", err);
+        println!("\x1b[31m出现错误：{}\x1b[0m", err);
     }
 }
