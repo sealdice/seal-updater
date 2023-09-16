@@ -29,7 +29,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ./target/release
+        path: ./target/release/seal-updater
 
   build-macos:
     runs-on: macos-latest
@@ -50,7 +50,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ./target/release
+        path: ./target/release/seal-updater
 
   build-windows:
     runs-on: windows-latest
@@ -71,4 +71,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ./target/release
+        path: ./target/release/seal-updater.exe
