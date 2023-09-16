@@ -30,6 +30,8 @@ jobs:
     - name: Add nightly rust-src
       run : rustup component add rust-src --toolchain nightly
     - name: Build
+      env: 
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
       run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-unknown-linux-gnu --release
     - name: Run tests
       run: cargo test --verbose
