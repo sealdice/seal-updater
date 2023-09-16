@@ -21,11 +21,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Get nightly toolchain
-      run : rustup toolchain add nightly-${{ matrix.rustarch }}-unknown-linux-gnu
+      run : rustup toolchain add nightly-x86_64-unknown-linux-gnu
     - name: Add nightly rust-src
-      run : rustup component add rust-src --toolchain nightly-${{ matrix.rustarch }}-unknown-linux-gnu
+      run : rustup component add rust-src --toolchain nightly
     - name: Build
-      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly-${{ matrix.rustarch }}-unknown-linux-gnu build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-unknown-linux-gnu --release
+      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-unknown-linux-gnu --release
     - name: Run tests
       run: cargo test --verbose
 
@@ -46,11 +46,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Get nightly toolchain
-      run: rustup toolchain add nightly-${{ matrix.rustarch }}-apple-darwin
+      run: rustup toolchain add nightly-x86_64-apple-darwin
     - name: Add nightly rust-src
-      run : rustup component add rust-src --toolchain nightly-${{ matrix.rustarch }}-apple-darwin
+      run : rustup component add rust-src --toolchain nightly
     - name: Build
-      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly-${{ matrix.rustarch }}-apple-darwin build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-apple-darwin --release
+      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-apple-darwin --release
     - name: Run tests
       run: cargo test --verbose
 
