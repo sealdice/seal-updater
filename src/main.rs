@@ -1,7 +1,7 @@
-use std::os::unix::process::CommandExt;
 use std::process::Command;
-use std::{io, thread};
+use std::io;
 use std::io::Write;
+use std::thread;
 use std::time::Duration;
 use clap::Parser;
 use crate::cli::CliArgs;
@@ -9,6 +9,11 @@ use crate::cli::CliArgs;
 mod cli;
 #[path= "runner/lib.rs"]
 mod lib;
+
+#[cfg(target_family = "windows")]
+const SEAL_EXE: &str = "sealdice-core.exe";
+#[cfg(target_family = "unix")]
+const SEAL_EXE: &str = "./sealdice-core";
 
 fn main() {
     let args = CliArgs::parse();
@@ -23,15 +28,29 @@ fn main() {
 
     println!("\x1b[33m海豹，启动！\x1b[0m\n");
     io::stdout().flush().unwrap();
-    let err = if !cfg!(windows) {
-        Command::new("chmod").args(["+x", "./sealdice-core"]).spawn().unwrap();
-        thread::sleep(Duration::from_secs(1));
-        Command::new("./sealdice-core").exec()
-    } else {
-        thread::sleep(Duration::from_secs(2));
-        Command::new("cmd")
-            .args(["/C", "start", "", "sealdice-core.exe"])
-            .exec()
-    };
+    run_command();
+}
+
+#[cfg(target_family = "unix")]
+fn run_command() {
+    use std::os::unix::process::CommandExt;
+    if let Err(e) = Command::new("chmod")
+        .args(["+x", SEAL_EXE])
+        .spawn()
+    {
+        println!("\x1b[31m启动失败：{}\x1b[0m\n", e);
+    }
+    thread::sleep(Duration::from_secs(2));
+    let err = Command::new(SEAL_EXE).exec();
     println!("\x1b[31m启动失败：{}\x1b[0m\n", err);
+}
+
+#[cfg(target_family = "windows")]
+fn run_command() {
+    thread::sleep(Duration::from_secs(2));
+    if let Err(e) = Command::new("cmd")
+        .args(["/C", "start", "", SEAL_EXE])
+        .spawn() {
+        println!("\x1b[31m启动失败：{}\x1b[0m\n", e);
+    }
 }

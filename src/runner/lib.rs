@@ -1,8 +1,10 @@
 use std::error::Error;
-use std::fs;
+use std::{fs, thread};
 use std::path::Path;
+use std::time::Duration;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use crate::cli::CliArgs;
+use crate::SEAL_EXE;
 
 mod decompress;
 mod progress;
@@ -14,8 +16,12 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
         wait_exit_pid(args.pid, &mut sys);
     }
 
-    if Path::new("./sealdice-core").exists() {
-        fs::rename("./sealdice-core", "./sealdice-core_old")?;
+    if Path::new(SEAL_EXE).exists() {
+        #[cfg(target_family = "windows")]
+        let old_name = format!("{}.old", SEAL_EXE);
+        #[cfg(target_family = "unix")]
+        let old_name = format!("{}_old", SEAL_EXE);
+        fs::rename(SEAL_EXE, old_name)?;
     }
 
     decompress::decompress(&args.upgrade, "")?;
@@ -25,6 +31,17 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
 }
 
 fn wait_exit_pid(pid: u32, sys: &mut System) {
+    loop {
+        let result = sys.process(Pid::from_u32(pid));
+        if result.is_none() {
+            break;
+        }
+        sys.refresh_processes();
+        thread::sleep(Duration::from_secs(1));
+    }
+}
+
+fn _wait_exit_pid(pid: u32, sys: &mut System) {
     let result = sys.process(Pid::from_u32(pid));
     if let Some(proc) = result {
         proc.wait();
