@@ -69,10 +69,12 @@ jobs:
       fail-fast: true
 
     steps:
+    - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --release --verbose
+      run: cargo build --verbose --release
     - name: Run tests
       run: cargo test --verbose
+
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
