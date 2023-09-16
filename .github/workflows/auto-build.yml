@@ -69,18 +69,12 @@ jobs:
       fail-fast: true
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Get Rustup Nightly
-      run: rustup toolchain add nightly-x86_64-pc-windows-gnu
-    - name: Add Nightly
-      run : rustup component add rust-src --toolchain nightly
     - name: Build
-      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target x86_64-pc-windows-gnu --release
+      run: cargo --release --verbose
     - name: Run tests
       run: cargo test --verbose
-
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ./target/x86_64-pc-windows-gnu/release/seal-updater.exe
+        path: ./target/release/seal-updater.exe
