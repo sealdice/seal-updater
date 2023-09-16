@@ -41,6 +41,8 @@ fn wait_exit_pid(pid: u32, sys: &mut System) {
     }
 }
 
+// Not in use because Process::wait seems to raise os error 32 on Windows
+// The process cannot access the file because it is being used by another process. (os error 32)
 fn _wait_exit_pid(pid: u32, sys: &mut System) {
     let result = sys.process(Pid::from_u32(pid));
     if let Some(proc) = result {
