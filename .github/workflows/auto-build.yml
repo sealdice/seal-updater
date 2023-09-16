@@ -23,7 +23,7 @@ jobs:
     - name: Get nightly toolchain
       run : rustup toolchain add nightly-${{ matrix.rustarch }}-unknown-linux-gnu
     - name: Add nightly rust-src
-      run : rustup component add rust-src --target nightly-${{ matrix.rustarch }}-unknown-linux-gnu
+      run : rustup component add rust-src --toolchain nightly-${{ matrix.rustarch }}-unknown-linux-gnu
     - name: Build
       run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-unknown-linux-gnu --release
     - name: Run tests
@@ -48,7 +48,7 @@ jobs:
     - name: Get nightly toolchain
       run: rustup toolchain add nightly-${{ matrix.rustarch }}-apple-darwin
     - name: Add nightly rust-src
-      run : rustup component add rust-src --target nightly-${{ matrix.rustarch }}-apple-darwin
+      run : rustup component add rust-src --toolchain nightly-${{ matrix.rustarch }}-apple-darwin
     - name: Build
       run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-apple-darwin --release
     - name: Run tests
