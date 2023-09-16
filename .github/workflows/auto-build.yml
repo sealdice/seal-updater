@@ -16,16 +16,17 @@ jobs:
       matrix:
         goos: [ linux ]
         goarch: [ amd64, arm64 ]
+        rustarch: [ x86_64, aarch64 ]
       fail-fast: true
 
     steps:
     - uses: actions/checkout@v3
     - name: Get Rustup Nightly
-      run : rustup toolchain add nightly-x86_64-unknown-linux-gnu
+      run : rustup toolchain add nightly-${{ matrix.rustarch }}-unknown-linux-gnu
     - name: Add Nightly
       run : rustup component add rust-src --toolchain nightly
     - name: Build
-      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target x86_64-unknown-linux-gnu --release
+      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-unknown-linux-gnu --release
     - name: Run tests
       run: cargo test --verbose
 
@@ -33,7 +34,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ./target/x86_64-unknown-linux-gnu/release/seal-updater
+        path: ./target/${{ matrix.rustarch }}-unknown-linux-gnu/release/seal-updater
 
   build-macos:
     runs-on: macos-latest
@@ -41,16 +42,17 @@ jobs:
       matrix:
         goos: [ darwin ]
         goarch: [ amd64, arm64 ]
+        rustarch: [ x86_64, aarch64 ]
       fail-fast: true
 
     steps:
     - uses: actions/checkout@v3
     - name: Get Rustup Nightly
-      run: rustup toolchain add nightly-x86_64-apple-darwin
+      run: rustup toolchain add nightly-${{ matrix.rustarch }}-apple-darwin
     - name: Add Nightly
       run : rustup component add rust-src --toolchain nightly
     - name: Build
-      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target x86_64-apple-darwin --release
+      run: RUSTFLAGS="-Zlocation-detail=none" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-apple-darwin --release
     - name: Run tests
       run: cargo test --verbose
 
@@ -58,20 +60,23 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ./target/x86_64-apple-darwin/release/seal-updater
+        path: ./target/${{ matrix.rustarch }}-apple-darwin/release/seal-updater
 
   build-windows:
     runs-on: windows-latest
     strategy:
       matrix:
         goos: [ windows ]
-        goarch: [ amd64 ]
+        goarch: [ amd64, i386 ]
+        rustarch: [ x86_64, i686 ]
       fail-fast: true
 
     steps:
     - uses: actions/checkout@v3
+    - name: Get Toolchain
+      run: rustup target add ${{ matrix.rustarch }}-pc-windows-msvc
     - name: Build
-      run: cargo build --verbose --release
+      run: cargo build --target ${{ matrix.rustarch }}-px-windows-msvc --verbose --release
     - name: Run tests
       run: cargo test --verbose
 
@@ -79,4 +84,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ./target/release/seal-updater.exe
+        path: ./target/${{ matrix.rustarch }}-px-windows-msvc/release/seal-updater.exe
