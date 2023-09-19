@@ -55,7 +55,12 @@ fn run_command(path: impl AsRef<Path>) {
     thread::sleep(Duration::from_secs(2));
     if let Err(e) = Command::new("cmd")
         .current_dir(path)
-        .args(["/C", "start", "", Path::new("./").join(SEAL_EXE)])
+        .args([
+            "/C",
+            "start",
+            "",
+            &Path::new("./").join(SEAL_EXE).to_string_lossy(),
+        ])
         .spawn()
     {
         println!("\x1b[31m启动失败：{}\x1b[0m\n", e);
