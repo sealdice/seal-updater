@@ -148,6 +148,21 @@ jobs:
           name: dist
           path: ./dist/
 
+      - name: Rename to go arch
+        run: |
+          cp ./dist/seal-updater-darwin-aarch64 ./dist/seal-updater-darwin-arm64
+          cp ./dist/seal-updater-darwin-x86_64 ./dist/seal-updater-darwin-amd64
+          cp ./dist/seal-updater-linux-aarch64 ./dist/seal-updater-linux-arm64
+          cp ./dist/seal-updater-linux-x86_64 ./dist/seal-updater-linux-amd64
+          cp ./dist/seal-updater-windows-i686.exe ./dist/seal-updater-windows-386.exe
+          cp ./dist/seal-updater-windows-x86_64.exe ./dist/seal-updater-windows-amd64.exe
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-all
+          path: ./dist
+
       # - name: Update Prerelease
       #   continue-on-error: true
       #   uses: andelf/nightly-release@main
