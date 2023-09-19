@@ -89,3 +89,84 @@ jobs:
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.rustarch }}
         path: ./target/${{ matrix.rustarch }}-pc-windows-msvc/release/seal-updater.exe
+
+  collect:
+    name: Collect
+    runs-on: ubuntu-latest
+    needs:
+      - build-linux
+      - build-windows
+      - build-macos
+    strategy:
+      matrix:
+        # target: linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64, android/arm64
+        goos: [ linux, windows, darwin ]
+        rustarch: [ i686, x86_64, aarch64 ]
+        exclude:
+          - goos: linux
+            rustarch: 'i686'
+          - goos: windows
+            rustarch: aarch64
+          - goos: darwin
+            rustarch: 'i686'
+    steps:
+    - name: Get Files
+      uses: actions/download-artifact@v3
+      with:
+        name: seal-tool-${{ matrix.goos }}-${{ matrix.rustarch }}
+        path: ./dist/
+
+    - name: Rename
+      if: matrix.goos != 'windows'
+      run: |
+        mv ./dist/seal-updater ./dist/seal-updater-${{ matrix.goos }}-${{ matrix.rustarch }}
+        echo "DIST=./dist/seal-updater-${{ matrix.goos }}-${{ matrix.rustarch }}" >> $GITHUB_ENV;
+
+    - name: Rename
+      if: matrix.goos == 'windows'
+      run: |
+        mv ./dist/seal-updater.exe ./dist/seal-updater-${{ matrix.goos }}-${{ matrix.rustarch }}.exe
+        echo "DIST=./dist/seal-updater-${{ matrix.goos }}-${{ matrix.rustarch }}.exe" >> $GITHUB_ENV;
+
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: ${{ env.DIST }}
+
+  prerelease:
+    name: Prerelease
+    runs-on: ubuntu-latest
+    needs:
+      - collect
+    # permissions:
+    #   contents: write
+    steps:
+      - name: Get Files
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: ./dist/
+
+      # - name: Update Prerelease
+      #   continue-on-error: true
+      #   uses: andelf/nightly-release@main
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: pre-release
+      #     name: 'Latest Dev Build $$'
+      #     prerelease: true
+      #     body: '> ⚠️注意️️：这是自动构建的预发布版本，非正式版本！'
+      #     files: |
+      #       ./dist/*
+
+      - uses: ryand56/r2-upload-action@latest
+        continue-on-error: true
+        with:
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: ./dist
+          destination-dir: ./u/v0.1.0/
