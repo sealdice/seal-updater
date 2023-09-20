@@ -31,11 +31,28 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
     }
 
     decompress::decompress(&args.upgrade, &args.cwd)?;
-    println!("\r\x1b[32m解压成功!\x1b[0m{}", " ".repeat(7));
+    println!("\r\x1b[32m解压成功!\x1b[0m{}", " ".repeat(8));
 
     Ok(())
 }
 
+#[cfg(target_family = "unix")]
+fn wait_exit_pid(pid: u32, sys: &mut System) {
+    loop {
+        let result = sys.process(Pid::from_u32(pid));
+        if let Some(proc) = result {
+            if proc.name() == "seal-updater" {
+                break;
+            }
+        } else {
+            break;
+        }
+        sys.refresh_processes();
+        thread::sleep(Duration::from_secs(1));
+    }
+}
+
+#[cfg(target_family = "windows")]
 fn wait_exit_pid(pid: u32, sys: &mut System) {
     loop {
         let result = sys.process(Pid::from_u32(pid));
