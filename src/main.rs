@@ -1,11 +1,11 @@
 use crate::cli::CliArgs;
 use clap::Parser;
-use std::io;
-use std::io::Write;
+use std::io::{stdin, Read, Write};
 use std::path::Path;
 use std::process::Command;
 use std::thread;
 use std::time::Duration;
+use std::{io, process};
 
 mod cli;
 #[path = "runner/lib.rs"]
@@ -25,11 +25,11 @@ fn main() {
 
     if let Err(err) = lib::run_upgrade(&args) {
         println!("\n\x1b[31m出现错误：{}\x1b[0m", err);
-        return;
+        exit_gracefully(1);
     }
 
     if args.debug {
-        return;
+        exit_gracefully(0);
     }
 
     println!("\x1b[43m\x1b[30m升级完毕，即将启动海豹核心…\x1b[0m");
@@ -67,5 +67,15 @@ fn run_command(path: impl AsRef<Path>) {
         .spawn()
     {
         println!("\x1b[31m启动失败：{}\x1b[0m\n", e);
+        exit_gracefully(1);
     }
+}
+
+fn exit_gracefully(code: i32) {
+    if cfg!(windows) {
+        println!("按任意键退出…");
+        _ = stdin().read(&mut [0u8]).unwrap();
+    }
+
+    process::exit(code);
 }

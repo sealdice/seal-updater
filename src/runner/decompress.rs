@@ -1,6 +1,7 @@
 use crate::lib::progress;
 use flate2::read;
 use std::error::Error;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Component, Components, Path, PathBuf};
@@ -20,7 +21,7 @@ pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<()
     let lower = path
         .as_ref()
         .extension()
-        .ok_or("无法取得压缩文件扩展名")?
+        .unwrap_or(OsStr::new("unknown"))
         .to_ascii_lowercase();
     let ext = lower.to_str().ok_or("无法将文件扩展名转换为 UTF-8 编码")?;
     print!("正在解压…  ");
@@ -36,7 +37,23 @@ pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<()
             let decoder = read::GzDecoder::new(file);
             untar(decoder, target.as_ref(), show, total)
         }
-        _ => Err(format!("压缩文件具有未知扩展名 {}", ext))?,
+        _ => {
+            if unzip(file, target.as_ref()).is_err() {
+                let file = File::open(path.as_ref())?;
+                let decoder = read::GzDecoder::new(file);
+                let (total, show) = match get_tar_count(decoder) {
+                    Ok(t) => (t, true),
+                    Err(_) => (0, false),
+                };
+
+                let file = File::open(path.as_ref())?;
+                let decoder = read::GzDecoder::new(file);
+                if untar(decoder, target.as_ref(), show, total).is_err() {
+                    Err("为无扩展名文件解压时出现错误")?;
+                }
+            }
+            Ok(())
+        }
     }
 }
 
