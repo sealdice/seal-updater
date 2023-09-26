@@ -81,7 +81,7 @@ jobs:
       run: rustup target add ${{ matrix.rustarch }}-pc-windows-msvc
     - name: Build
       run: |
-        set RUSTFLAGS=-C target-feature=+crt-static
+        set RUSTFLAGS="-C target-feature=+crt-static"
         cargo build --target ${{ matrix.rustarch }}-pc-windows-msvc --verbose --release
     - name: Run tests
       run: cargo test --verbose
