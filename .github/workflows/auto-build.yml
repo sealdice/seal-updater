@@ -90,6 +90,8 @@ jobs:
     - name: Get target
       run: rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
     - name: Build
+      env: 
+          CARGO_TARGET_I686_PC_WINDOWS_GNU_LINKER: mingw-w64-i686-gcc
       run: |
         set RUSTFLAGS="-C target-feature=+crt-static"
         cargo build --target ${{ matrix.rustarch }}-pc-windows-gnu --verbose --release
