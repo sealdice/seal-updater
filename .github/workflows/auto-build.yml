@@ -78,11 +78,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Get target
-      run: rustup target add ${{ matrix.rustarch }}-pc-windows-msvc
+      run: rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
     - name: Build
       run: |
         set RUSTFLAGS="-C target-feature=+crt-static"
-        cargo build --target ${{ matrix.rustarch }}-pc-windows-msvc --verbose --release
+        cargo build --target ${{ matrix.rustarch }}-pc-windows-gnu --verbose --release
     - name: Run tests
       run: cargo test --verbose
 
@@ -90,7 +90,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: seal-tool-${{ matrix.goos }}-${{ matrix.rustarch }}
-        path: ./target/${{ matrix.rustarch }}-pc-windows-msvc/release/seal-updater.exe
+        path: ./target/${{ matrix.rustarch }}-pc-windows-gnu/release/seal-updater.exe
 
   collect:
     name: Collect
