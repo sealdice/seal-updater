@@ -74,16 +74,12 @@ jobs:
         goos: [ windows ]
         rustarch: [ x86_64, i686 ]
       fail-fast: true
-    defaults:
-      run:
-        shell: msys2 {0}
 
     steps:
-    - uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW64
-        update: true
-        install: mingw-w64-${{ matrix.rustarch }}-gcc
+    - name: Install MinGW
+      run : winget install -e --id MSYS2.MSYS2
+    - name: Add MinGW
+      run : echo ";C:\msys64\ucrt64\bin" >> $GITHUB_PATH
     - uses: actions/checkout@v3
     - name: Get target
       run: rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
