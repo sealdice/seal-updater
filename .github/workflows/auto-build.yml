@@ -90,9 +90,7 @@ jobs:
         run : rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
   
       - name: Build with cargo
-        run: |
-          set RUSTFLAGS="-C target-feature=+crt-static"
-          cargo build --target ${{ matrix.rustarch }}-pc-windows-gnu --verbose --release
+        run: cargo build --target ${{ matrix.rustarch }}-pc-windows-gnu --verbose --release
         
       - name: Run tests
         run: cargo test --verbose
