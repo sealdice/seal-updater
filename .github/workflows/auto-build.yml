@@ -85,6 +85,8 @@ jobs:
         if : matrix.rustarch == 'i686'
         run: |
           echo "C:\tools\msys64" >> $GITHUB_PATH
+          echo "C:\tools\msys64\mingw32\bin" >> $GITHUB_PATH
+          set PATH=%PATH%;C:\tools\msys64;C:\tools\msys64\mingw32\bin
 
       - name: Install rustup
         run : rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
