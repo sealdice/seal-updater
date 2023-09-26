@@ -83,10 +83,10 @@ jobs:
         update: true
         install: mingw-w64-${{ matrix.rustarch }}-gcc
     - name: Add MinGW to PATH (64)
-      if  : matrix.rustarch == x86_64
+      if  : matrix.rustarch == 'x86_64'
       run : echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
     - name: Add MinGW to PATH
-      if  : matrix.rustarch == i686
+      if  : matrix.rustarch == 'i686'
       run : echo "C:\msys64\mingw32\bin" >> $GITHUB_PATH
     - name: Get target
       run : rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
