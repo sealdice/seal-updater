@@ -77,22 +77,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up MSYS2 and MinGW
-      uses: msys2/setup-msys2@v2
+    - uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
         update: true
         install: mingw-w64-${{ matrix.rustarch }}-gcc
-    - name: Add MinGW to PATH
-      run: |
-        echo "C:\msys64\mingw32\bin" >> $GITHUB_PATH
-        echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
     - name: Get target
       run: rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
     - name: Build
-      env: 
-        CARGO_TARGET_I686_PC_WINDOWS_GNU_LINKER: i686-w64-mingw32-gcc
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: x86_64-w64-mingw32-gcc
       run: |
         set RUSTFLAGS="-C target-feature=+crt-static"
         cargo build --target ${{ matrix.rustarch }}-pc-windows-gnu --verbose --release
