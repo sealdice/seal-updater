@@ -74,37 +74,22 @@ jobs:
         goos: [ windows ]
         rustarch: [ x86_64, i686 ]
       fail-fast: true
+    defaults:
+      run:
+        shell: msys2 {0}
 
     steps:
-    - uses: actions/checkout@v3
     - uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
         update: true
         install: mingw-w64-${{ matrix.rustarch }}-gcc
-    - name: Add MinGW to PATH (64)
-      if  : matrix.rustarch == 'x86_64'
-      run : echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
-    - name: Add MinGW to PATH
-      if  : matrix.rustarch == 'i686'
-      run : echo "C:\msys64\mingw32\bin" >> $GITHUB_PATH
-    - name: Get target
-      run : rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
-    - name: Print PATH
-      run: echo $env:PATH
-    - name: Check MinGW installation (64)
-      if : matrix.rustarch == 'x86_64'
-      run: |
-        ls C:\msys64\mingw32\bin
-    - name: Check MinGW installation
-      if : matrix.rustarch == 'i686'
-      run: |
-        ls C:\msys64\mingw32\bin
+    - uses: actions/checkout@v3
     - name: Get target
       run: rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
     - name: Build
       run: |
-        set RUSTFLAGS="-C linker=$${{ matrix.rustarch }}-w64-mingw32-gcc -C target-feature=+crt-static"
+        set RUSTFLAGS="-C target-feature=+crt-static"
         cargo build --target ${{ matrix.rustarch }}-pc-windows-gnu --verbose --release
       
     - name: Run tests
