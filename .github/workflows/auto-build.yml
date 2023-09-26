@@ -77,6 +77,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Set up MSYS2 and MinGW
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: mingw-w64-${{ matrix.rustarch }}-gcc
+    - name: Add MinGW to PATH
+      run: |
+        echo "C:\msys64\mingw32\bin" >> $GITHUB_PATH
+        echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
     - name: Get target
       run: rustup target add ${{ matrix.rustarch }}-pc-windows-gnu
     - name: Build
@@ -85,7 +95,6 @@ jobs:
         cargo build --target ${{ matrix.rustarch }}-pc-windows-gnu --verbose --release
     - name: Run tests
       run: cargo test --verbose
-
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
