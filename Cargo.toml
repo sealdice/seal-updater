@@ -21,6 +21,8 @@ zip = "0.6.6"
 tar = "0.4.40"
 flate2 = "1.0.27"
 
+term_size = "1.0.0-beta1"
+
 [build-dependencies]
 # For static links on Windows
 static_vcruntime = "2.0.0"

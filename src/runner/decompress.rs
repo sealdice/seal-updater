@@ -1,9 +1,8 @@
-use crate::lib::progress;
-use flate2::read;
+use crate::lib::progress::ProgressBar;
+use flate2::read::GzDecoder;
 use std::error::Error;
-use std::ffi::OsStr;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Cursor, Read, Seek, SeekFrom};
 use std::path::{Component, Components, Path, PathBuf};
 use std::{fs, io};
 use zip::ZipArchive;
@@ -13,53 +12,55 @@ static UPD_NAME: &str = "seal-updater.exe";
 #[cfg(target_family = "unix")]
 static UPD_NAME: &str = "seal-updater";
 
+struct ResettableArchive {
+    file: File,
+    data: Vec<u8>,
+}
+
+impl ResettableArchive {
+    fn new(mut file: File) -> io::Result<Self> {
+        let mut data = Vec::new();
+        file.read_to_end(&mut data)?;
+        file.seek(SeekFrom::Start(0))?;
+        Ok(Self { file, data })
+    }
+
+    fn count(&self) -> io::Result<usize> {
+        let cursor = Cursor::new(self.data.clone());
+        let decoder = GzDecoder::new(cursor);
+        let mut archive = tar::Archive::new(decoder);
+        Ok(archive.entries()?.count())
+    }
+
+    fn archive(self) -> tar::Archive<GzDecoder<File>> {
+        let decoder = GzDecoder::new(self.file);
+        tar::Archive::new(decoder)
+    }
+}
+
 pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
     if path.as_ref().as_os_str().is_empty() {
         Err("指向更新文件路径为空")?;
     }
     let file = File::open(path.as_ref())?;
-    let lower = path
-        .as_ref()
-        .extension()
-        .unwrap_or(OsStr::new("unknown"))
-        .to_ascii_lowercase();
-    let ext = lower.to_str().ok_or("无法将文件扩展名转换为 UTF-8 编码")?;
-    print!("正在解压…  ");
-    match ext {
-        "zip" => unzip(file, target.as_ref()),
-        "gz" => {
-            let decoder = read::GzDecoder::new(file);
-            let (total, show) = match get_tar_count(decoder) {
-                Ok(t) => (t, true),
-                Err(_) => (0, false),
-            };
-            let file = File::open(path.as_ref())?;
-            let decoder = read::GzDecoder::new(file);
-            untar(decoder, target.as_ref(), show, total)
-        }
-        _ => {
-            if unzip(file, target.as_ref()).is_err() {
-                let file = File::open(path.as_ref())?;
-                let decoder = read::GzDecoder::new(file);
-                let (total, show) = match get_tar_count(decoder) {
-                    Ok(t) => (t, true),
-                    Err(_) => (0, false),
-                };
+    if unzip(file, target.as_ref()).is_err() {
+        let file = File::open(path.as_ref())?;
+        let archive = ResettableArchive::new(file)?;
+        // Get count
+        let count = archive.count()?;
 
-                let file = File::open(path.as_ref())?;
-                let decoder = read::GzDecoder::new(file);
-                if untar(decoder, target.as_ref(), show, total).is_err() {
-                    Err("为无扩展名文件解压时出现错误")?;
-                }
-            }
-            Ok(())
-        }
+        untar(archive.archive(), target.as_ref(), count)?;
     }
+
+    Ok(())
 }
 
 fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
     let mut archive = ZipArchive::new(file)?;
     let arc_len = archive.len();
+
+    let mut progress_bar = ProgressBar::new(arc_len);
+
     for i in 0..arc_len {
         let mut zip_file = archive.by_index(i)?;
         // TODO: Trust and skip name check?
@@ -71,23 +72,17 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
         } else {
             target.join("new_updater").join(name)
         };
-        progress::print_progress(i + 1, arc_len);
+        progress_bar.progress();
         make_file(&mut zip_file, &dest)?;
     }
 
     Ok(())
 }
 
-fn get_tar_count(reader: impl Read) -> Result<usize, Box<dyn Error>> {
-    let mut archive = tar::Archive::new(reader);
-    Ok(archive.entries()?.count())
-}
-
-fn untar(
-    reader: impl Read,
+fn untar<T: Read>(
+    mut archive: tar::Archive<T>,
     target: &Path,
-    show_prog: bool,
-    total: usize,
+    count: usize,
 ) -> Result<(), Box<dyn Error>> {
     let is_path_safe = |com: Components| {
         let normals: Vec<Component> = com
@@ -97,8 +92,9 @@ fn untar(
         !normals.is_empty()
     };
 
-    let mut archive = tar::Archive::new(reader);
-    for (i, entry) in archive.entries()?.enumerate() {
+    let mut progress_bar = ProgressBar::new(count);
+
+    for entry in archive.entries()? {
         let mut tar_file = entry?;
         let name = tar_file.path()?;
         if !is_path_safe(name.components()) {
@@ -110,9 +106,7 @@ fn untar(
         } else {
             target.join("new_updater").join(name)
         };
-        if show_prog {
-            progress::print_progress(i + 1, total);
-        }
+        progress_bar.progress();
         make_file(&mut tar_file, &dest)?;
     }
     Ok(())
