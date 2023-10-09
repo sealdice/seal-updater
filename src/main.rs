@@ -19,9 +19,6 @@ const SEAL_EXE: &str = "sealdice-core";
 fn main() {
     let args = CliArgs::parse();
     println!("\x1b[43m\x1b[30mSealDice 升级程序 by 檀轶步棋\x1b[0m");
-    if args.debug {
-        println!("Got PID: {}", args.pid);
-    }
 
     if let Err(err) = lib::run_upgrade(&args) {
         println!("\n\x1b[31m出现错误：{}\x1b[0m", err);

@@ -28,6 +28,15 @@ impl ProgressBar {
         bar_width / 10 * 10
     }
 
+    pub fn blackout(&self) {
+        let width = match term_size::dimensions_stdout() {
+            None => 80,
+            Some((w, _)) => w,
+        };
+        print!("\r{}\r", " ".repeat(width));
+        _ = std::io::stdout().flush();
+    }
+
     pub fn progress(&mut self) {
         _ = self.progress_by(1);
     }

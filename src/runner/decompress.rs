@@ -2,9 +2,10 @@ use crate::lib::progress::ProgressBar;
 use flate2::read::GzDecoder;
 use std::error::Error;
 use std::fs::File;
-use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 use std::path::{Component, Components, Path, PathBuf};
 use std::{fs, io};
+use zip::result::ZipError;
 use zip::ZipArchive;
 
 #[cfg(target_family = "windows")]
@@ -43,7 +44,10 @@ pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<()
         Err("指向更新文件路径为空")?;
     }
     let file = File::open(path.as_ref())?;
-    if unzip(file, target.as_ref()).is_err() {
+    if let Err(err) = unzip(file, target.as_ref()) {
+        if !matches!(err.downcast_ref(), Some(ZipError::InvalidArchive(_))) {
+            Err(err)?;
+        }
         let file = File::open(path.as_ref())?;
         let archive = ResettableArchive::new(file)?;
         // Get count
@@ -63,6 +67,8 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
 
     for i in 0..arc_len {
         let mut zip_file = archive.by_index(i)?;
+        println!("\r{}", zip_file.name());
+        _ = io::stdout().flush();
         // TODO: Trust and skip name check?
         let name = zip_file
             .enclosed_name()
@@ -97,6 +103,9 @@ fn untar<T: Read>(
     for entry in archive.entries()? {
         let mut tar_file = entry?;
         let name = tar_file.path()?;
+        progress_bar.blackout();
+        print!("  decompressing: {}\n", name.to_string_lossy());
+        _ = io::stdout().flush();
         if !is_path_safe(name.components()) {
             // TODO: Trust and skip name check?
             Err("文件名不安全，可能导致 slip")?;
