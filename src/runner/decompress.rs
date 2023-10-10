@@ -2,7 +2,7 @@ use crate::lib::progress::ProgressBar;
 use flate2::read::GzDecoder;
 use std::error::Error;
 use std::fs::File;
-use std::io::{Cursor, Read, Seek, SeekFrom, Write};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Component, Components, Path, PathBuf};
 use std::{fs, io};
 use zip::result::ZipError;
@@ -15,22 +15,19 @@ static UPD_NAME: &str = "seal-updater";
 
 struct ResettableArchive {
     file: File,
-    data: Vec<u8>,
 }
 
 impl ResettableArchive {
-    fn new(mut file: File) -> io::Result<Self> {
-        let mut data = Vec::new();
-        file.read_to_end(&mut data)?;
-        file.seek(SeekFrom::Start(0))?;
-        Ok(Self { file, data })
+    fn new(file: File) -> Self {
+        Self { file }
     }
 
-    fn count(&self) -> io::Result<usize> {
-        let cursor = Cursor::new(self.data.clone());
-        let decoder = GzDecoder::new(cursor);
+    fn count(&mut self) -> io::Result<usize> {
+        let decoder = GzDecoder::new(&mut self.file);
         let mut archive = tar::Archive::new(decoder);
-        Ok(archive.entries()?.count())
+        let count = archive.entries()?.count();
+        self.file.seek(SeekFrom::Start(0))?;
+        Ok(count)
     }
 
     fn archive(self) -> tar::Archive<GzDecoder<File>> {
@@ -49,7 +46,7 @@ pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<()
             Err(err)?;
         }
         let file = File::open(path.as_ref())?;
-        let archive = ResettableArchive::new(file)?;
+        let mut archive = ResettableArchive::new(file);
         // Get count
         let count = archive.count()?;
 
@@ -67,7 +64,8 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
 
     for i in 0..arc_len {
         let mut zip_file = archive.by_index(i)?;
-        println!("\r{}", zip_file.name());
+        progress_bar.blackout();
+        println!("  \x1b[33mdecompressing:\x1b[0m {}", zip_file.name());
         _ = io::stdout().flush();
         // TODO: Trust and skip name check?
         let name = zip_file
@@ -104,7 +102,7 @@ fn untar<T: Read>(
         let mut tar_file = entry?;
         let name = tar_file.path()?;
         progress_bar.blackout();
-        print!("  decompressing: {}\n", name.to_string_lossy());
+        println!("  \x1b[33mdecompressing:\x1b[0m {}", name.to_string_lossy());
         _ = io::stdout().flush();
         if !is_path_safe(name.components()) {
             // TODO: Trust and skip name check?
@@ -127,7 +125,7 @@ fn make_file(mut source: &mut impl Read, dest: &PathBuf) -> Result<(), Box<dyn E
             fs::create_dir_all(parent)?;
         }
     }
-    if dest.is_dir() || dest.to_string_lossy().ends_with("/") {
+    if dest.is_dir() || dest.to_string_lossy().ends_with('/') {
         fs::create_dir_all(dest)?;
     } else {
         let mut out = File::create(dest)?;

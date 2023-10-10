@@ -1,6 +1,6 @@
 [package]
 name = "seal-updater"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["檀轶步棋"]
 edition = "2021"
 
@@ -13,7 +13,7 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-clap = { version = "4.4.3", features = ["derive"] }
+clap = { version = "4.4.6", features = ["derive"] }
 sysinfo = "0.29.10"
 
 # From 0.10.0, `zip` changes its APIs fundamentally.
