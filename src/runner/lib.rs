@@ -36,7 +36,6 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[cfg(target_family = "unix")]
 fn wait_exit_pid(pid: u32, sys: &mut System) {
     loop {
         let result = sys.process(Pid::from_u32(pid));
@@ -45,18 +44,6 @@ fn wait_exit_pid(pid: u32, sys: &mut System) {
                 break;
             }
         } else {
-            break;
-        }
-        sys.refresh_processes();
-        thread::sleep(Duration::from_secs(1));
-    }
-}
-
-#[cfg(target_family = "windows")]
-fn wait_exit_pid(pid: u32, sys: &mut System) {
-    loop {
-        let result = sys.process(Pid::from_u32(pid));
-        if result.is_none() {
             break;
         }
         sys.refresh_processes();

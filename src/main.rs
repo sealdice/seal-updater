@@ -21,7 +21,7 @@ fn main() {
     println!("\x1b[43m\x1b[30mSealDice 升级程序 by 檀轶步棋\x1b[0m");
 
     if let Err(err) = lib::run_upgrade(&args) {
-        println!("\n\x1b[31m出现错误：{}\x1b[0m", err);
+        println!("\n\x1b[31m出现错误：{}\x1b[0m\n", err);
         exit_gracefully(1);
     }
 
@@ -29,7 +29,7 @@ fn main() {
         exit_gracefully(0);
     }
 
-    println!("\x1b[43m\x1b[30m升级完毕，即将启动海豹核心…\x1b[0m");
+    println!("\x1b[43m\x1b[30m升级完毕，即将启动海豹核心…\x1b[0m\n");
     io::stdout().flush().unwrap();
     run_command(Path::new(&args.cwd));
 }
@@ -41,13 +41,15 @@ fn run_command(path: impl AsRef<Path>) {
         .args(["+x", &path.as_ref().join(SEAL_EXE).to_string_lossy()])
         .spawn()
     {
-        println!("\x1b[31m授权失败：{}\x1b[0m\n", e);
+        println!("\x1b[31mchmod 失败：{}\x1b[0m\n", e);
+        exit_gracefully(1);
     }
-    thread::sleep(Duration::from_secs(1));
+    thread::sleep(Duration::from_secs(2));
     let err = Command::new(Path::new("./").join(SEAL_EXE))
         .current_dir(path)
         .exec();
     println!("\x1b[31m启动失败：{}\x1b[0m\n", err);
+    exit_gracefully(1);
 }
 
 #[cfg(target_family = "windows")]
@@ -69,9 +71,9 @@ fn run_command(path: impl AsRef<Path>) {
 }
 
 fn exit_gracefully(code: i32) {
-    if cfg!(windows) {
+    if cfg!(windows) && code != 0 {
         println!("按任意键退出…");
-        _ = stdin().read(&mut [0u8]).unwrap();
+        _ = stdin().read(&mut [0u8]);
     }
 
     process::exit(code);

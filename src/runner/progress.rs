@@ -70,7 +70,7 @@ impl ProgressBar {
             self.max
         );
         print!("{output}");
-        std::io::stdout().flush()?;
+        _ = std::io::stdout().flush();
 
         if new_progress >= self.max as i32 {
             println!();

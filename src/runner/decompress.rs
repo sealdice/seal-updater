@@ -13,25 +13,23 @@ static UPD_NAME: &str = "seal-updater.exe";
 #[cfg(target_family = "unix")]
 static UPD_NAME: &str = "seal-updater";
 
-struct ResettableArchive {
-    file: File,
-}
+struct ResettableArchive(File);
 
 impl ResettableArchive {
     fn new(file: File) -> Self {
-        Self { file }
+        Self(file)
     }
 
     fn count(&mut self) -> io::Result<usize> {
-        let decoder = GzDecoder::new(&mut self.file);
+        let decoder = GzDecoder::new(&mut self.0);
         let mut archive = tar::Archive::new(decoder);
         let count = archive.entries()?.count();
-        self.file.seek(SeekFrom::Start(0))?;
+        self.0.seek(SeekFrom::Start(0))?;
         Ok(count)
     }
 
     fn archive(self) -> tar::Archive<GzDecoder<File>> {
-        let decoder = GzDecoder::new(self.file);
+        let decoder = GzDecoder::new(self.0);
         tar::Archive::new(decoder)
     }
 }
