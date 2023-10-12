@@ -12,7 +12,7 @@ pub struct CliArgs {
     /// Current working directory
     #[arg(long, default_value_t = String::from("./"))]
     pub cwd: String,
-    /// Debug: Do not start main process
+    /// Switch debug mode
     #[arg(short)]
     pub debug: bool,
 }

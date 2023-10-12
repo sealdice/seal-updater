@@ -1,5 +1,5 @@
-use crate::cli::CliArgs;
-use crate::SEAL_EXE;
+use crate::global::{CMD_OPT, SEAL_EXE};
+use colored::Colorize;
 use std::error::Error;
 use std::path::Path;
 use std::time::Duration;
@@ -9,10 +9,11 @@ use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 mod decompress;
 mod progress;
 
-pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
+pub fn run_upgrade() -> Result<(), Box<dyn Error>> {
+    let args = &CMD_OPT;
     match args.cwd.as_str() {
         "" | "./" | "." => (),
-        _ => println!("工作路径已经被设定为: \x1b[33m{}\x1b[0m", args.cwd),
+        _ => println!("工作路径已经被设定为: {}", args.cwd.yellow()),
     }
 
     let mut sys = System::new_all();
@@ -31,7 +32,7 @@ pub fn run_upgrade(args: &CliArgs) -> Result<(), Box<dyn Error>> {
     }
 
     decompress::decompress(&args.upgrade, &args.cwd)?;
-    println!("\r\x1b[32m解压成功!\x1b[0m{}", " ".repeat(8));
+    println!("\r{}", "解压成功!".green());
 
     Ok(())
 }
