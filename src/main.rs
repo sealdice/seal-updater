@@ -13,19 +13,20 @@ mod global;
 mod lib;
 
 fn main() {
-    println!("{}", "SealDice 升级程序 by 檀轶步棋".black().on_yellow());
     let args = &CMD_OPT;
-    if args.debug {
+    if args.verbose {
+        println!("{}", "VERBOSE mode on".yellow());
         println!("工作路径已被设定为: {}", args.cwd.yellow())
     }
+    println!("{}", "SealDice 升级程序 by 檀轶步棋".black().on_yellow());
 
     if let Err(err) = lib::run_upgrade() {
         println!("\n{}\n", format!("出现错误: {}", err).red());
         exit_gracefully(1);
     }
 
-    if args.debug {
-        println!("{}", "Exiting due to debug mode".yellow());
+    if args.skip_startup {
+        println!("{}", "Exiting due to flag --skip-startup".yellow());
         exit_gracefully(0);
     }
 

@@ -11,14 +11,9 @@ mod progress;
 
 pub fn run_upgrade() -> Result<(), Box<dyn Error>> {
     let args = &CMD_OPT;
-    match args.cwd.as_str() {
-        "" | "./" | "." => (),
-        _ => println!("工作路径已经被设定为: {}", args.cwd.yellow()),
-    }
-
     let mut sys = System::new_all();
-    println!("等待海豹主进程关闭…");
     if args.pid != 0 {
+        println!("等待海豹主进程关闭…");
         wait_exit_pid(args.pid, &mut sys);
     }
 

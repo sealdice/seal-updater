@@ -59,7 +59,7 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
 
     for i in 0..arc_len {
         let mut zip_file = archive.by_index(i)?;
-        if CMD_OPT.debug {
+        if CMD_OPT.verbose {
             progress_bar.blackout();
             println!("  {} {}", "decompressing:".yellow(), zip_file.name());
             _ = io::stdout().flush();
@@ -73,8 +73,8 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
         } else {
             target.join("new_updater").join(name)
         };
-        progress_bar.progress();
         make_file(&mut zip_file, &dest)?;
+        progress_bar.progress();
     }
 
     Ok(())
@@ -98,11 +98,12 @@ fn untar<T: Read>(
     for entry in archive.entries()? {
         let mut tar_file = entry?;
         let name = tar_file.path()?;
-        if CMD_OPT.debug {
+        if CMD_OPT.verbose {
             progress_bar.blackout();
-            println!("  {} {}", "decompressing:".yellow(), name.to_string_lossy());
+            println!("  {} {}", "reading:".yellow(), name.to_string_lossy());
             _ = io::stdout().flush();
         }
+        progress_bar.progress();
         if !is_path_safe(name.components()) {
             // TODO: Trust and skip name check?
             Err("文件名不安全，可能导致 slip")?;
@@ -112,7 +113,6 @@ fn untar<T: Read>(
         } else {
             target.join("new_updater").join(name)
         };
-        progress_bar.progress();
         make_file(&mut tar_file, &dest)?;
     }
     Ok(())

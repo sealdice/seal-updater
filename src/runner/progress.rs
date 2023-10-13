@@ -73,7 +73,8 @@ impl ProgressBar {
         _ = std::io::stdout().flush();
 
         if new_progress >= self.max as i32 {
-            self.blackout();
+            // self.blackout();
+            println!();
         } else {
             self.current = new_progress as usize;
         }

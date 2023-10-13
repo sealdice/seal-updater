@@ -12,7 +12,10 @@ pub struct CliArgs {
     /// Current working directory
     #[arg(long, default_value_t = String::from("./"))]
     pub cwd: String,
-    /// Switch debug mode
-    #[arg(short)]
-    pub debug: bool,
+    /// Print more info
+    #[arg(long)]
+    pub verbose: bool,
+    /// Do not start SealDice after decompressing
+    #[arg(long = "skip-startup")]
+    pub skip_startup: bool,
 }
