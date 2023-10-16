@@ -88,7 +88,7 @@ fn untar<T: Read>(
     let is_path_safe = |com: Components| {
         let normals: Vec<Component> = com
             .into_iter()
-            .filter(|c| matches!(c, Component::Normal(_)))
+            .filter(|c| matches!(c, Component::Normal(_)) || matches!(c, Component::CurDir))
             .collect();
         !normals.is_empty()
     };
