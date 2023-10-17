@@ -4,14 +4,15 @@ use std::error::Error;
 use std::path::Path;
 use std::time::Duration;
 use std::{fs, thread};
-use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
+use sysinfo::{Pid, PidExt, ProcessExt, ProcessRefreshKind, RefreshKind, System, SystemExt};
 
 mod decompress;
 mod progress;
 
 pub fn run_upgrade() -> Result<(), Box<dyn Error>> {
     let args = &CMD_OPT;
-    let mut sys = System::new_all();
+    let mut sys = System::new_with_specifics(
+        RefreshKind::new().with_processes(ProcessRefreshKind::everything()));
     if args.pid != 0 {
         println!("等待海豹主进程关闭…");
         wait_exit_pid(args.pid, &mut sys);
@@ -47,11 +48,3 @@ fn wait_exit_pid(pid: u32, sys: &mut System) {
     }
 }
 
-// Not in use because Process::wait seems to raise os error 32 on Windows
-// The process cannot access the file because it is being used by another process. (os error 32)
-fn _wait_exit_pid(pid: u32, sys: &mut System) {
-    let result = sys.process(Pid::from_u32(pid));
-    if let Some(proc) = result {
-        proc.wait();
-    }
-}
