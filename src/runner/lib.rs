@@ -12,7 +12,8 @@ mod progress;
 pub fn run_upgrade() -> Result<(), Box<dyn Error>> {
     let args = &CMD_OPT;
     let mut sys = System::new_with_specifics(
-        RefreshKind::new().with_processes(ProcessRefreshKind::everything()));
+        RefreshKind::new().with_processes(ProcessRefreshKind::everything()),
+    );
     if args.pid != 0 {
         println!("等待海豹主进程关闭…");
         wait_exit_pid(args.pid, &mut sys);
@@ -47,4 +48,3 @@ fn wait_exit_pid(pid: u32, sys: &mut System) {
         thread::sleep(Duration::from_secs(1));
     }
 }
-

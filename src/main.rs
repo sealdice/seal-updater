@@ -25,12 +25,6 @@ fn main() {
         exit_gracefully(1);
     }
 
-    if args.skip_startup {
-        println!("{}", "Exiting due to flag --skip-startup".yellow());
-        exit_gracefully(0);
-    }
-
-    println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
     io::stdout().flush().unwrap();
     run_command(&args.cwd);
 }
@@ -38,13 +32,41 @@ fn main() {
 #[cfg(target_family = "unix")]
 fn run_command(path: impl AsRef<Path>) {
     use std::os::unix::process::CommandExt;
-    if let Err(err) = Command::new("chmod")
-        .args(["+x", &path.as_ref().join(SEAL_EXE).to_string_lossy()])
-        .spawn()
-    {
-        println!("\n{}\n", format!("出现错误: {}", err).red());
-        exit_gracefully(1);
+
+    if CMD_OPT.verbose {
+        println!(
+            "Running `chmod` on {}",
+            &path.as_ref().join(SEAL_EXE).to_string_lossy().on_yellow()
+        );
     }
+    let res = Command::new("chmod")
+        .args(["+x", &path.as_ref().join(SEAL_EXE).to_string_lossy()])
+        .output();
+    match res {
+        Ok(o) => {
+            if CMD_OPT.verbose {
+                let err = o.stderr;
+                if err.len() > 0 {
+                    let err = String::from_utf8(err).unwrap_or_default();
+                    println!("from stderr: {}", err.on_red());
+                } else {
+                    println!("no error returned from stderr");
+                }
+            }
+        }
+        Err(err) => {
+            println!("\n{}\n", format!("出现错误: {}", err).red());
+            exit_gracefully(1);
+        }
+    }
+
+    if CMD_OPT.skip_startup {
+        println!("{}", "Exiting due to flag --skip-startup".yellow());
+        exit_gracefully(0);
+    }
+
+    println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
+
     thread::sleep(Duration::from_secs(2));
     let err = Command::new(Path::new("./").join(SEAL_EXE))
         .current_dir(path)
@@ -55,6 +77,13 @@ fn run_command(path: impl AsRef<Path>) {
 
 #[cfg(target_family = "windows")]
 fn run_command(path: impl AsRef<Path>) {
+    if CMD_OPT.skip_startup {
+        println!("{}", "Exiting due to flag --skip-startup".yellow());
+        exit_gracefully(0);
+    }
+
+    println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
+
     thread::sleep(Duration::from_secs(2));
     if let Err(err) = Command::new("cmd")
         .current_dir(path)
