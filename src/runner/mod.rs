@@ -1,22 +1,22 @@
-use crate::global::{CMD_OPT, SEAL_EXE};
-use colored::Colorize;
-use std::error::Error;
-use std::path::Path;
-use std::time::Duration;
-use std::{fs, thread};
+use std::{error::Error, fs, path::Path};
+
+use log::{info, warn};
 use sysinfo::{Pid, PidExt, ProcessExt, ProcessRefreshKind, RefreshKind, System, SystemExt};
+
+use crate::{
+    colorize::Colorize,
+    global::{CMD_OPT, SEAL_EXE},
+};
 
 mod decompress;
 mod progress;
 
-pub fn run_upgrade() -> Result<(), Box<dyn Error>> {
+pub fn upgrade() -> Result<(), Box<dyn Error>> {
     let args = &CMD_OPT;
-    let mut sys = System::new_with_specifics(
-        RefreshKind::new().with_processes(ProcessRefreshKind::everything()),
-    );
     if args.pid != 0 {
-        println!("等待海豹主进程关闭…");
-        wait_exit_pid(args.pid, &mut sys);
+        println!("等待海豹主进程关闭...");
+        info!("等待 PID: {}", args.pid);
+        wait_proc(args.pid);
     }
 
     let seal_path = Path::new(&args.cwd);
@@ -25,16 +25,24 @@ pub fn run_upgrade() -> Result<(), Box<dyn Error>> {
         let old_name = format!("{}.old", SEAL_EXE);
         #[cfg(target_family = "unix")]
         let old_name = format!("{}_old", SEAL_EXE);
-        fs::rename(seal_path.join(SEAL_EXE), seal_path.join(old_name))?;
+        fs::rename(seal_path.join(SEAL_EXE), seal_path.join(old_name)).map_err(|e| {
+            warn!("未能备份旧文件: {}", e);
+            e
+        })?;
     }
 
     decompress::decompress(&args.upgrade, &args.cwd)?;
     println!("\r{}", "解压成功!".green());
+    info!("成功解压 {}", args.upgrade);
 
     Ok(())
 }
 
-fn wait_exit_pid(pid: u32, sys: &mut System) {
+fn wait_proc(pid: u32) {
+    let mut sys = System::new_with_specifics(
+        RefreshKind::new().with_processes(ProcessRefreshKind::everything()),
+    );
+
     loop {
         let result = sys.process(Pid::from_u32(pid));
         if let Some(proc) = result {
@@ -45,6 +53,7 @@ fn wait_exit_pid(pid: u32, sys: &mut System) {
             break;
         }
         sys.refresh_processes();
-        thread::sleep(Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
+
