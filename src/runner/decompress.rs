@@ -2,7 +2,7 @@ use flate2::read::GzDecoder;
 use log::{error, info, warn};
 use std::error::Error;
 use std::fs::{self, File};
-use std::io::{self, Read, Write, Seek, SeekFrom};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Component, Components, Path, PathBuf};
 use zip::result::ZipError;
 use zip::ZipArchive;

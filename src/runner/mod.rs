@@ -56,4 +56,3 @@ fn wait_proc(pid: u32) {
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
-

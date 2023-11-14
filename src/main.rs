@@ -1,10 +1,10 @@
-use std::process::Command;
 use std::path::Path;
+use std::process::Command;
 
 use global::{CMD_OPT, SEAL_EXE};
 
 use colorize::Colorize;
-use log::{info, error};
+use log::{error, info};
 
 use crate::logger::init_logger;
 
@@ -57,7 +57,7 @@ fn exit_gracefully(code: i32) {
 #[cfg(target_family = "unix")]
 fn run_command(path: impl AsRef<Path>) {
     use std::os::unix::process::CommandExt;
-    
+
     if CMD_OPT.verbose {
         println!(
             "Running `chmod` on {}",
