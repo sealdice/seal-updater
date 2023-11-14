@@ -65,7 +65,7 @@ fn run_command(path: impl AsRef<Path>) {
         );
         info!(
             "运行 `chmod` 于 {}",
-            &path.as_ref().join(SEAL_EXE).to_string_lossy().on_yellow()
+            &path.as_ref().join(SEAL_EXE).to_string_lossy()
         );
     }
     let res = Command::new("chmod")
