@@ -1,13 +1,19 @@
 use once_cell::sync::Lazy;
 
+/// Indicates whether the program is running on Windows Terminal,
+/// thus ANSI escape codes supported. There is a chance it may fail.
 static WIN_TERM: Lazy<bool> = Lazy::new(|| std::env::var("WT_SESSION").is_ok());
 
+/// Contains the original string and a vector of ANSI color codes.
 pub struct ColoredString {
     original: String,
     codes: Vec<i32>,
 }
 
 impl ColoredString {
+    /// Returns a new `ColoredString` with an intial color code.
+    /// Use 39 for default text color, 49 for default background color,
+    /// or 0 that represents 'reset'.
     pub fn new_with(s: &str, code: i32) -> Self {
         ColoredString {
             original: s.to_owned(),
@@ -15,10 +21,12 @@ impl ColoredString {
         }
     }
 
-    fn push_color(&mut self, code: i32) {
+    /// Adds a new color code to `Self`.
+    fn push(&mut self, code: i32) {
         self.codes.push(code);
     }
 
+    /// Creates a new `ColoredString` from a `&str`.
     fn from_str(s: &str, code: i32) -> ColoredString {
         ColoredString::new_with(s, code)
     }
@@ -41,6 +49,8 @@ impl std::fmt::Display for ColoredString {
     }
 }
 
+/// Extends `&str` and `ColoredString` to support text wrapped with
+/// color codes.
 pub trait Colorize {
     fn black(self) -> ColoredString
     where
@@ -212,7 +222,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(30);
+        self.push(30);
         self
     }
 
@@ -220,7 +230,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(31);
+        self.push(31);
         self
     }
 
@@ -228,7 +238,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(32);
+        self.push(32);
         self
     }
 
@@ -236,7 +246,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(33);
+        self.push(33);
         self
     }
 
@@ -244,7 +254,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(34);
+        self.push(34);
         self
     }
 
@@ -252,7 +262,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(35);
+        self.push(35);
         self
     }
 
@@ -260,7 +270,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(36);
+        self.push(36);
         self
     }
 
@@ -268,7 +278,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(37);
+        self.push(37);
         self
     }
 
@@ -276,7 +286,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(40);
+        self.push(40);
         self
     }
 
@@ -284,7 +294,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(41);
+        self.push(41);
         self
     }
 
@@ -292,7 +302,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(42);
+        self.push(42);
         self
     }
 
@@ -300,7 +310,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(43);
+        self.push(43);
         self
     }
 
@@ -308,7 +318,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(44);
+        self.push(44);
         self
     }
 
@@ -316,7 +326,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(45);
+        self.push(45);
         self
     }
 
@@ -324,7 +334,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(46);
+        self.push(46);
         self
     }
 
@@ -332,7 +342,7 @@ impl Colorize for ColoredString {
     where
         Self: Sized,
     {
-        self.push_color(47);
+        self.push(47);
         self
     }
 }

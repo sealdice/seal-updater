@@ -18,4 +18,7 @@ pub struct CliArgs {
     /// Do not start SealDice after decompressing
     #[arg(long = "skip-startup")]
     pub skip_startup: bool,
+    /// Produce no log for the run
+    #[arg(long = "no-log")]
+    pub no_log: bool
 }

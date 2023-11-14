@@ -30,7 +30,11 @@ fn main() {
     );
 
     match init_logger() {
-        Ok(name) => println!("本次升级日志将被写入 {}", name.yellow()),
+        Ok(name) => {
+            if name != "" {
+                println!("本次升级日志将被写入 {}", name.yellow())
+            }
+        },
         Err(e) => eprintln!("{}", format!("未能初始化升级日志: {}", e).red()),
     }
 
@@ -61,13 +65,14 @@ fn run_command(path: impl AsRef<Path>) {
     if CMD_OPT.verbose {
         println!(
             "Running `chmod` on {}",
-            &path.as_ref().join(SEAL_EXE).to_string_lossy().on_yellow()
+            &path.as_ref().join(SEAL_EXE).to_string_lossy().yellow()
         );
         info!(
             "运行 `chmod` 于 {}",
             &path.as_ref().join(SEAL_EXE).to_string_lossy()
         );
     }
+
     let res = Command::new("chmod")
         .args(["+x", &path.as_ref().join(SEAL_EXE).to_string_lossy()])
         .output();
@@ -97,7 +102,8 @@ fn run_command(path: impl AsRef<Path>) {
     }
 
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
-
+    info!("准备运行海豹主程序，如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题", SEAL_EXE);
+    
     std::thread::sleep(std::time::Duration::from_secs(2));
     let err = Command::new(Path::new("./").join(SEAL_EXE))
         .current_dir(path)
@@ -115,6 +121,7 @@ fn run_command(path: impl AsRef<Path>) {
     }
 
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
+    info!("准备运行海豹主程序，如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题", SEAL_EXE);
 
     std::thread::sleep(std::time::Duration::from_secs(2));
     if let Err(err) = Command::new("cmd")
