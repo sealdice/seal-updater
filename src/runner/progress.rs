@@ -28,7 +28,7 @@ impl ProgressBar {
         bar_width / 10 * 10
     }
 
-    pub fn blackout(&self) {
+    pub fn blackout() {
         let width = match term_size::dimensions_stdout() {
             None => 80,
             Some((w, _)) => w,
@@ -42,6 +42,10 @@ impl ProgressBar {
     }
 
     pub fn progress_by(&mut self, offset: i32) -> Result<(), Box<dyn Error>> {
+        if self.max == 0 {
+            return Ok(());
+        }
+
         let new_progress = self.current as i32 + offset;
         if new_progress > self.max as i32 {
             Err(format!(

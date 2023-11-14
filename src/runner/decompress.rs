@@ -1,18 +1,20 @@
-use crate::global::{CMD_OPT, UPD_NAME};
-use crate::lib::progress::ProgressBar;
-use colored::Colorize;
 use flate2::read::GzDecoder;
+use log::{error, info, warn};
 use std::error::Error;
-use std::fs::File;
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::fs::{self, File};
+use std::io::{self, Read, Write, Seek, SeekFrom};
 use std::path::{Component, Components, Path, PathBuf};
-use std::{fs, io};
 use zip::result::ZipError;
 use zip::ZipArchive;
 
-struct ResettableArchive(File);
+use crate::colorize::Colorize;
+use crate::global::{CMD_OPT, UPD_NAME};
 
-impl ResettableArchive {
+use super::progress;
+
+struct ReseekableArchive(File);
+
+impl ReseekableArchive {
     fn new(file: File) -> Self {
         Self(file)
     }
@@ -31,21 +33,41 @@ impl ResettableArchive {
     }
 }
 
-pub fn decompress(path: impl AsRef<Path>, target: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
-    if path.as_ref().as_os_str().is_empty() {
+pub(crate) fn decompress(
+    src: impl AsRef<Path>,
+    dst: impl AsRef<Path>,
+) -> Result<(), Box<dyn Error>> {
+    if src.as_ref().as_os_str().is_empty() {
+        error!("更新文件路径为空: {:?}", src.as_ref());
         Err("指向更新文件路径为空")?;
     }
-    let file = File::open(path.as_ref())?;
-    if let Err(err) = unzip(file, target.as_ref()) {
-        if !matches!(err.downcast_ref(), Some(ZipError::InvalidArchive(_))) {
-            Err(err)?;
-        }
-        let file = File::open(path.as_ref())?;
-        let mut archive = ResettableArchive::new(file);
-        // Get count
-        let count = archive.count()?;
 
-        untar(archive.archive(), target.as_ref(), count)?;
+    let file = File::open(src.as_ref()).map_err(|e| {
+        error!("未能打开更新压缩包: {}", e);
+        e
+    })?;
+
+    if let Err(e) = unzip(file, dst.as_ref()) {
+        if !matches!(e.downcast_ref(), Some(ZipError::InvalidArchive(_))) {
+            error!("解压缩失败: {}", e);
+            Err(e)?;
+        }
+
+        info!("尝试 ZIP 解压缩失败，开始 GZ 解压缩");
+
+        let file = File::open(src.as_ref()).map_err(|e| {
+            error!("未能打开更新压缩包: {}", e);
+            e
+        })?;
+        let mut archive = ReseekableArchive::new(file);
+        let count = archive
+            .count()
+            .map_err(|e| {
+                warn!("无法获取 GZ 压缩包的文件数量: {}", e);
+                e
+            })
+            .unwrap_or(0);
+        untar(archive.archive(), dst.as_ref(), count)?;
     }
 
     Ok(())
@@ -55,19 +77,25 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
     let mut archive = ZipArchive::new(file)?;
     let arc_len = archive.len();
 
-    let mut progress_bar = ProgressBar::new(arc_len);
+    let mut progress_bar = progress::ProgressBar::new(arc_len);
 
     for i in 0..arc_len {
-        let mut zip_file = archive.by_index(i)?;
+        let mut zip_file = archive.by_index(i).map_err(|e| {
+            error!("获取 ZIP 文件 entry 时出现错误: {}", e);
+            e
+        })?;
         if CMD_OPT.verbose {
-            progress_bar.blackout();
+            progress::ProgressBar::blackout();
             println!("  {} {}", "decompressing:".yellow(), zip_file.name());
             _ = io::stdout().flush();
         }
-        // TODO: Trust and skip name check?
         let name = zip_file
             .enclosed_name()
-            .ok_or("文件名不安全，可能导致 zip slip")?;
+            .ok_or("文件名不安全，可能导致 zip slip")
+            .map_err(|e| {
+                error!("发现不安全的文件名，解压缩终止: {}", e);
+                e
+            })?;
         let dest = if name.to_string_lossy() != UPD_NAME {
             target.join(name)
         } else {
@@ -93,21 +121,34 @@ fn untar<T: Read>(
         !normals.is_empty()
     };
 
-    let mut progress_bar = ProgressBar::new(count);
+    let mut progress_bar = progress::ProgressBar::new(count);
 
-    for entry in archive.entries()? {
-        let mut tar_file = entry?;
-        let name = tar_file.path()?;
+    let entries = archive.entries().map_err(|e| {
+        error!("获取 GZ 文件 entry 时出现错误: {}", e);
+        e
+    })?;
+    for entry in entries {
+        let mut tar_file = entry.map_err(|e| {
+            error!("获取 GZ 文件 entry 时出现错误: {}", e);
+            e
+        })?;
+        let name = tar_file.path().map_err(|e| {
+            error!("获取文件名时出现错误: {}", e);
+            e
+        })?;
+
         if CMD_OPT.verbose {
-            progress_bar.blackout();
+            progress::ProgressBar::blackout();
             println!("  {} {}", "reading:".yellow(), name.to_string_lossy());
             _ = io::stdout().flush();
         }
         progress_bar.progress();
+
         if !is_path_safe(name.components()) {
-            // TODO: Trust and skip name check?
+            error!("发现不安全的文件名，解压缩终止: {:?}", name);
             Err("文件名不安全，可能导致 slip")?;
         }
+
         let dest = if name.to_string_lossy() != UPD_NAME {
             target.join(name)
         } else {
@@ -121,14 +162,28 @@ fn untar<T: Read>(
 fn make_file(mut source: &mut impl Read, dest: &PathBuf) -> Result<(), Box<dyn Error>> {
     if let Some(parent) = dest.parent() {
         if !parent.exists() {
-            fs::create_dir_all(parent)?;
+            fs::create_dir_all(parent).map_err(|e| {
+                error!("未能创建文件夹: {}", e);
+                e
+            })?;
         }
     }
+
     if dest.is_dir() || dest.to_string_lossy().ends_with('/') {
-        fs::create_dir_all(dest)?;
+        fs::create_dir_all(dest).map_err(|e| {
+            error!("未能创建文件夹: {}", e);
+            e
+        })?;
     } else {
-        let mut out = File::create(dest)?;
-        io::copy(&mut source, &mut out)?;
+        let mut out = File::create(dest).map_err(|e| {
+            error!("未能创建文件: {}", e);
+            e
+        })?;
+
+        io::copy(&mut source, &mut out).map_err(|e| {
+            error!("未能复制文件: {}", e);
+            e
+        })?;
     }
     Ok(())
 }

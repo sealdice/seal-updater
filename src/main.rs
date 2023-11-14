@@ -1,42 +1,71 @@
-use crate::global::{CMD_OPT, SEAL_EXE};
-use colored::Colorize;
-use std::io::{stdin, Read, Write};
-use std::path::Path;
 use std::process::Command;
-use std::thread;
-use std::time::Duration;
-use std::{io, process};
+use std::path::Path;
+
+use global::{CMD_OPT, SEAL_EXE};
+
+use colorize::Colorize;
+use log::{info, error};
+
+use crate::logger::init_logger;
 
 mod cli;
+mod colorize;
 mod global;
-#[path = "runner/lib.rs"]
-mod lib;
+mod logger;
+mod runner;
 
 fn main() {
-    let args = &CMD_OPT;
-    if args.verbose {
-        println!("{}", "VERBOSE mode on".yellow());
-        println!("工作路径已被设定为: {}", args.cwd.yellow())
+    let arg = &CMD_OPT;
+    if arg.verbose {
+        println!("{}", "Verbose mode turned on".yellow());
+        println!("Working directory: {}", arg.cwd.yellow());
     }
-    println!("{}", "SealDice 升级程序 by 檀轶步棋".black().on_yellow());
 
-    if let Err(err) = lib::run_upgrade() {
-        println!("\n{}\n", format!("出现错误: {}", err).red());
+    let ver = env!("CARGO_PKG_VERSION");
+    println!(
+        "{}",
+        format!("SealDice 升级程序 v{} by 檀轶步棋", ver)
+            .black()
+            .on_yellow()
+    );
+
+    match init_logger() {
+        Ok(name) => println!("本次升级日志将被写入 {}", name.yellow()),
+        Err(e) => eprintln!("{}", format!("未能初始化升级日志: {}", e).red()),
+    }
+
+    info!("开始更新流程");
+    if let Err(e) = runner::upgrade() {
+        eprintln!("{}", format!("发生错误: {}", e).red());
         exit_gracefully(1);
     }
 
-    io::stdout().flush().unwrap();
-    run_command(&args.cwd);
+    info!("处理新文件并（如果可能）启动海豹");
+    run_command(&arg.cwd);
+}
+
+fn exit_gracefully(code: i32) {
+    if cfg!(windows) && code != 0 {
+        use std::io::Read;
+        println!("按回车键退出…");
+        _ = std::io::stdin().read_exact(&mut [0u8]);
+    }
+
+    std::process::exit(code);
 }
 
 #[cfg(target_family = "unix")]
 fn run_command(path: impl AsRef<Path>) {
     use std::os::unix::process::CommandExt;
-
+    
     if CMD_OPT.verbose {
         println!(
             "Running `chmod` on {}",
             &path.as_ref().join(SEAL_EXE).to_string_lossy().on_yellow()
+        );
+        info!(
+            "运行 `chmod` 于 {}",
+            &path.as_ref().join(SEAL_EXE).to_string_lossy()
         );
     }
     let res = Command::new("chmod")
@@ -48,14 +77,16 @@ fn run_command(path: impl AsRef<Path>) {
                 let err = o.stderr;
                 if err.len() > 0 {
                     let err = String::from_utf8(err).unwrap_or_default();
-                    println!("from stderr: {}", err.on_red());
+                    eprintln!("From stderr: {}", err.on_red());
+                    error!("`chmod` 返回的错误: {}", err);
                 } else {
-                    println!("no error returned from stderr");
+                    eprintln!("No error returned from stderr");
                 }
             }
         }
         Err(err) => {
-            println!("\n{}\n", format!("出现错误: {}", err).red());
+            eprintln!("\n{}\n", format!("出现错误: {}", err).red());
+            error!("执行 `chmod` 出错: {}", err);
             exit_gracefully(1);
         }
     }
@@ -67,11 +98,12 @@ fn run_command(path: impl AsRef<Path>) {
 
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
 
-    thread::sleep(Duration::from_secs(2));
+    std::thread::sleep(std::time::Duration::from_secs(2));
     let err = Command::new(Path::new("./").join(SEAL_EXE))
         .current_dir(path)
         .exec();
-    println!("\n{}\n", format!("出现错误: {}", err).red());
+    eprintln!("\n{}\n", format!("出现错误: {}", err).red());
+    error!("启动核心出错: {}", err);
     exit_gracefully(1);
 }
 
@@ -84,7 +116,7 @@ fn run_command(path: impl AsRef<Path>) {
 
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
 
-    thread::sleep(Duration::from_secs(2));
+    std::thread::sleep(std::time::Duration::from_secs(2));
     if let Err(err) = Command::new("cmd")
         .current_dir(path)
         .args([
@@ -95,16 +127,8 @@ fn run_command(path: impl AsRef<Path>) {
         ])
         .spawn()
     {
-        println!("\n{}\n", format!("出现错误: {}", err).red());
+        eprintln!("\n{}\n", format!("出现错误: {}", err).red());
+        error!("启动核心出错: {}", err);
         exit_gracefully(1);
     }
-}
-
-fn exit_gracefully(code: i32) {
-    if cfg!(windows) && code != 0 {
-        println!("按回车键退出…");
-        _ = stdin().read_exact(&mut [0u8]);
-    }
-
-    process::exit(code);
 }
