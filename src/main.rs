@@ -29,12 +29,8 @@ fn main() {
             .on_yellow()
     );
 
-    match init_logger() {
-        Ok(name) => {
-            if name != "" {
-                println!("本次升级日志将被写入 {}", name.yellow())
-            }
-        },
+    match init_logger(CMD_OPT.no_log) {
+        Ok(name) => if name != "" { println!("本次升级日志将被写入 {}", name.yellow()) },
         Err(e) => eprintln!("{}", format!("未能初始化升级日志: {}", e).red()),
     }
 
@@ -103,7 +99,7 @@ fn run_command(path: impl AsRef<Path>) {
 
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
     info!("准备运行海豹主程序，如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题", SEAL_EXE);
-    
+
     std::thread::sleep(std::time::Duration::from_secs(2));
     let err = Command::new(Path::new("./").join(SEAL_EXE))
         .current_dir(path)

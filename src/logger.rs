@@ -1,14 +1,12 @@
-use crate::global::CMD_OPT;
-
 /// Initialize the logger, making it create a new file and write to that file.
 /// If `no_log` in [CMD_OPT] is set to `true` with `--no-log` flag,
 /// all logging methods will be no-ops.
-pub fn init_logger() -> Result<String, fern::InitError> {
-    let mut file_name = String::new();
-    let log_level = if CMD_OPT.no_log {
-        log::LevelFilter::Off
+pub fn init_logger(no_log: bool) -> Result<String, fern::InitError> {
+    let (log_level, file_name) = if no_log {
+        let date = chrono::Local::now().format("%F_%H%M%S").to_string();
+        (log::LevelFilter::Off, format!("upgrade_log_{}.txt", date))
     } else {
-        log::LevelFilter::Info
+        (log::LevelFilter::Info, String::new())
     };
 
     let cfg = fern::Dispatch::new()
@@ -24,10 +22,7 @@ pub fn init_logger() -> Result<String, fern::InitError> {
         })
         .level(log_level);
 
-    if !CMD_OPT.no_log {
-        let date = chrono::Local::now().format("%F_%H%M%S").to_string();
-        file_name = format!("升级日志_{}.txt", date);
-
+    if !no_log {
         cfg.chain(fern::log_file(&file_name)?).apply()?;
     } else {
         cfg.apply()?;
