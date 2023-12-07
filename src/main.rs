@@ -117,12 +117,7 @@ fn run_command(path: impl AsRef<Path>) {
     std::thread::sleep(std::time::Duration::from_secs(2));
     if let Err(err) = Command::new("cmd")
         .current_dir(path)
-        .args([
-            "/C",
-            "start",
-            "",
-            path.as_ref().join(SEAL_EXE).to_string_lossy(),
-        ])
+        .args(["/C", "start", "", path.as_ref().join(SEAL_EXE)])
         .spawn()
     {
         eprintln!("\n{}\n", format!("出现错误: {}", err).red());
