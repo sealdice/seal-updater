@@ -30,7 +30,11 @@ fn main() {
     );
 
     match init_logger(CMD_OPT.no_log) {
-        Ok(name) => if name != "" { println!("本次升级日志将被写入 {}", name.yellow()) },
+        Ok(name) => {
+            if name != "" {
+                println!("本次升级日志将被写入 {}", name.yellow())
+            }
+        }
         Err(e) => eprintln!("{}", format!("未能初始化升级日志: {}", e).red()),
     }
 
@@ -56,49 +60,36 @@ fn exit_gracefully(code: i32) {
 
 #[cfg(target_family = "unix")]
 fn run_command(path: impl AsRef<Path>) {
-    use std::os::unix::process::CommandExt;
+    use std::{fs, os::unix::fs::PermissionsExt, os::unix::process::CommandExt};
 
-    if CMD_OPT.verbose {
-        println!(
-            "Running `chmod` on {}",
-            &path.as_ref().join(SEAL_EXE).to_string_lossy().yellow()
-        );
-        info!(
-            "运行 `chmod` 于 {}",
-            &path.as_ref().join(SEAL_EXE).to_string_lossy()
-        );
-    }
-
-    let res = Command::new("chmod")
-        .args(["+x", &path.as_ref().join(SEAL_EXE).to_string_lossy()])
-        .output();
-    match res {
-        Ok(o) => {
-            if CMD_OPT.verbose {
-                let err = o.stderr;
-                if err.len() > 0 {
-                    let err = String::from_utf8(err).unwrap_or_default();
-                    eprintln!("From stderr: {}", err.on_red());
-                    error!("`chmod` 返回的错误: {}", err);
-                } else {
-                    eprintln!("No error returned from stderr");
-                }
-            }
+    let metadata = fs::metadata(&path.as_ref().join(SEAL_EXE));
+    match metadata {
+        Ok(meta) => {
+            let mut perm = meta.permissions();
+            info!("将sealdice-core权限设置为0744");
+            perm.set_mode(0o744);
         }
-        Err(err) => {
-            eprintln!("\n{}\n", format!("出现错误: {}", err).red());
-            error!("执行 `chmod` 出错: {}", err);
-            exit_gracefully(1);
+        Err(e) => {
+            eprintln!("修改sealdice-core权限时失败: {}", e);
+            error!(
+                "修改 `{}` 权限时失败: {}",
+                &path.as_ref().join(SEAL_EXE).to_string_lossy(),
+                e
+            );
         }
     }
 
     if CMD_OPT.skip_startup {
-        println!("{}", "Exiting due to flag --skip-startup".yellow());
+        println!("{}", "因 --skip-startup，现在退出程序".yellow());
+        info!("因 --skip-startup，现在退出程序");
         exit_gracefully(0);
     }
 
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
-    info!("准备运行海豹主程序，如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题", SEAL_EXE);
+    info!(
+        "准备运行海豹主程序。如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题",
+        SEAL_EXE
+    );
 
     std::thread::sleep(std::time::Duration::from_secs(2));
     let err = Command::new(Path::new("./").join(SEAL_EXE))
@@ -112,12 +103,16 @@ fn run_command(path: impl AsRef<Path>) {
 #[cfg(target_family = "windows")]
 fn run_command(path: impl AsRef<Path>) {
     if CMD_OPT.skip_startup {
-        println!("{}", "Exiting due to flag --skip-startup".yellow());
+        println!("{}", "因 --skip-startup，现在退出程序".yellow());
+        info!("因 --skip-startup，现在退出程序");
         exit_gracefully(0);
     }
 
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
-    info!("准备运行海豹主程序，如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题", SEAL_EXE);
+    info!(
+        "准备运行海豹主程序。如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题",
+        SEAL_EXE
+    );
 
     std::thread::sleep(std::time::Duration::from_secs(2));
     if let Err(err) = Command::new("cmd")

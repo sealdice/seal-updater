@@ -20,5 +20,5 @@ pub struct CliArgs {
     pub skip_startup: bool,
     /// Produce no log for the run
     #[arg(long = "no-log")]
-    pub no_log: bool
+    pub no_log: bool,
 }
