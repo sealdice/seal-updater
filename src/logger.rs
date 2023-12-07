@@ -3,10 +3,10 @@
 /// all logging methods will be no-ops.
 pub fn init_logger(no_log: bool) -> Result<String, fern::InitError> {
     let (log_level, file_name) = if no_log {
-        let date = chrono::Local::now().format("%F_%H%M%S").to_string();
-        (log::LevelFilter::Off, format!("upgrade_log_{}.txt", date))
+        (log::LevelFilter::Off, String::new())
     } else {
-        (log::LevelFilter::Info, String::new())
+        let date = chrono::Local::now().format("%F_%H%M%S").to_string();
+        (log::LevelFilter::Debug, format!("upgrade_log_{}.txt", date))
     };
 
     let cfg = fern::Dispatch::new()

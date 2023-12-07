@@ -62,20 +62,19 @@ fn exit_gracefully(code: i32) {
 fn run_command(path: impl AsRef<Path>) {
     use std::{fs, os::unix::fs::PermissionsExt, os::unix::process::CommandExt};
 
-    let metadata = fs::metadata(&path.as_ref().join(SEAL_EXE));
-    match metadata {
-        Ok(meta) => {
-            let mut perm = meta.permissions();
-            info!("将sealdice-core权限设置为0744");
-            perm.set_mode(0o744);
+    // Do not use fs::metadata and then metadata::set_mode, because it does nothing.
+    let perm_res = fs::set_permissions(
+        &path.as_ref().join(SEAL_EXE),
+        PermissionsExt::from_mode(0o755),
+    );
+    match perm_res {
+        Ok(_) => {
+            info!("将 {:?} 权限设置为 0755", &path.as_ref().join(SEAL_EXE));
         }
         Err(e) => {
-            eprintln!("修改sealdice-core权限时失败: {}", e);
-            error!(
-                "修改 `{}` 权限时失败: {}",
-                &path.as_ref().join(SEAL_EXE).to_string_lossy(),
-                e
-            );
+            error!("设置 {:?} 权限时出错: {}", &path.as_ref().join(SEAL_EXE), e);
+            eprintln!("设置 sealdice-core 权限时出错: {}", e);
+            exit_gracefully(1);
         }
     }
 
@@ -85,6 +84,7 @@ fn run_command(path: impl AsRef<Path>) {
         exit_gracefully(0);
     }
 
+    std::thread::sleep(std::time::Duration::from_secs(1));
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
     info!(
         "准备运行海豹主程序。如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题",
@@ -92,7 +92,7 @@ fn run_command(path: impl AsRef<Path>) {
     );
 
     std::thread::sleep(std::time::Duration::from_secs(2));
-    let err = Command::new(Path::new("./").join(SEAL_EXE))
+    let err = Command::new(path.as_ref().join(SEAL_EXE))
         .current_dir(path)
         .exec();
     eprintln!("\n{}\n", format!("出现错误: {}", err).red());
@@ -121,7 +121,7 @@ fn run_command(path: impl AsRef<Path>) {
             "/C",
             "start",
             "",
-            &Path::new("./").join(SEAL_EXE).to_string_lossy(),
+            path.as_ref().join(SEAL_EXE).to_string_lossy(),
         ])
         .spawn()
     {
