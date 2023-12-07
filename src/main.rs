@@ -84,7 +84,6 @@ fn run_command(path: impl AsRef<Path>) {
         exit_gracefully(0);
     }
 
-    std::thread::sleep(std::time::Duration::from_secs(1));
     println!("{}\n", "升级完毕，即将启动海豹核心…".black().on_yellow());
     info!(
         "准备运行海豹主程序。如果海豹没有启动，但下面没有出现报错信息，应该是 {} 的问题",
