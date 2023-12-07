@@ -91,7 +91,7 @@ fn run_command(path: impl AsRef<Path>) {
     );
 
     std::thread::sleep(std::time::Duration::from_secs(2));
-    let err = Command::new(path.as_ref().join(SEAL_EXE))
+    let err = Command::new(Path::new("./").join(SEAL_EXE))
         .current_dir(path)
         .exec();
     eprintln!("\n{}\n", format!("出现错误: {}", err).red());
@@ -116,7 +116,12 @@ fn run_command(path: impl AsRef<Path>) {
     std::thread::sleep(std::time::Duration::from_secs(2));
     if let Err(err) = Command::new("cmd")
         .current_dir(path)
-        .args(["/C", "start", "", path.as_ref().join(SEAL_EXE)])
+        .args([
+            "/C",
+            "start",
+            "",
+            &Path::new("./").join(SEAL_EXE).to_string_lossy(),
+        ])
         .spawn()
     {
         eprintln!("\n{}\n", format!("出现错误: {}", err).red());
