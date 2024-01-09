@@ -1,7 +1,7 @@
 use std::{error::Error, fs, path::Path};
 
 use log::{info, warn};
-use sysinfo::{Pid, PidExt, ProcessExt, ProcessRefreshKind, RefreshKind, System, SystemExt};
+use sysinfo::{Pid, ProcessRefreshKind, RefreshKind, System};
 
 use crate::{
     colorize::Colorize,
