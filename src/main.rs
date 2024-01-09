@@ -44,7 +44,7 @@ fn main() {
         exit_gracefully(1);
     }
 
-    info!("处理新文件并（如果可能）启动海豹");
+    info!("处理新文件并(如果可能)启动海豹");
     run_command(&arg.cwd);
 }
 

@@ -2,9 +2,9 @@ name: Auto Build
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [master, main]
   pull_request:
-    branches: [ master, main ]
+    branches: [master, main]
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,83 +14,83 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [ linux ]
-        rustarch: [ x86_64, aarch64 ]
+        os: [linux]
+        rustarch: [x86_64, aarch64]
       fail-fast: true
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Install aarch64 gcc
-      if: matrix.rustarch == 'aarch64'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-    - name: Get nightly toolchain
-      run : rustup toolchain add nightly-x86_64-unknown-linux-gnu
-    - name: Add nightly rust-src
-      run : rustup component add rust-src --toolchain nightly
-    - name: Build
-      env: 
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-      run: RUSTFLAGS="-Zlocation-detail=none -C target-feature=+crt-static" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-unknown-linux-gnu --release
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - name: Install aarch64 gcc
+        if: matrix.rustarch == 'aarch64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+      - name: Get nightly toolchain
+        run: rustup toolchain add nightly-x86_64-unknown-linux-gnu
+      - name: Add nightly rust-src
+        run: rustup component add rust-src --toolchain nightly
+      - name: Build
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: RUSTFLAGS="-Zlocation-detail=none -C target-feature=+crt-static" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-unknown-linux-gnu --release
+      - name: Run tests
+        run: cargo test --verbose
 
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-        name: seal-tool-${{ matrix.os }}-${{ matrix.rustarch }}
-        path: ./target/${{ matrix.rustarch }}-unknown-linux-gnu/release/seal-updater
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: seal-tool-${{ matrix.os }}-${{ matrix.rustarch }}
+          path: ./target/${{ matrix.rustarch }}-unknown-linux-gnu/release/seal-updater
 
   build-macos:
     runs-on: macos-latest
     strategy:
       matrix:
-        os: [ darwin ]
-        rustarch: [ x86_64, aarch64 ]
+        os: [darwin]
+        rustarch: [x86_64, aarch64]
       fail-fast: true
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Get nightly toolchain
-      run: rustup toolchain add nightly-x86_64-apple-darwin
-    - name: Add nightly rust-src
-      run : rustup component add rust-src --toolchain nightly
-    - name: Build
-      run: RUSTFLAGS="-Zlocation-detail=none -C target-feature=+crt-static" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-apple-darwin --release
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - name: Get nightly toolchain
+        run: rustup toolchain add nightly-x86_64-apple-darwin
+      - name: Add nightly rust-src
+        run: rustup component add rust-src --toolchain nightly
+      - name: Build
+        run: RUSTFLAGS="-Zlocation-detail=none -C target-feature=+crt-static" cargo +nightly build -Z build-std=std,panic_abort --target ${{ matrix.rustarch }}-apple-darwin --release
+      - name: Run tests
+        run: cargo test --verbose
 
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-        name: seal-tool-${{ matrix.os }}-${{ matrix.rustarch }}
-        path: ./target/${{ matrix.rustarch }}-apple-darwin/release/seal-updater
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: seal-tool-${{ matrix.os }}-${{ matrix.rustarch }}
+          path: ./target/${{ matrix.rustarch }}-apple-darwin/release/seal-updater
 
   build-windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        os: [ windows ]
-        rustarch: [ x86_64, i686 ]
+        os: [windows]
+        rustarch: [x86_64, i686]
       fail-fast: true
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Get target
-      run: rustup target add ${{ matrix.rustarch }}-pc-windows-msvc
-    - name: Build
-      run: |
-        set RUSTFLAGS=-C target-feature=+crt-static
-        cargo build --target ${{ matrix.rustarch }}-pc-windows-msvc --verbose --release
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - name: Get target
+        run: rustup target add ${{ matrix.rustarch }}-pc-windows-msvc
+      - name: Build
+        run: |
+          set RUSTFLAGS=-C target-feature=+crt-static
+          cargo build --target ${{ matrix.rustarch }}-pc-windows-msvc --verbose --release
+      - name: Run tests
+        run: cargo test --verbose
 
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-        name: seal-tool-${{ matrix.os }}-${{ matrix.rustarch }}
-        path: ./target/${{ matrix.rustarch }}-pc-windows-msvc/release/seal-updater.exe
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: seal-tool-${{ matrix.os }}-${{ matrix.rustarch }}
+          path: ./target/${{ matrix.rustarch }}-pc-windows-msvc/release/seal-updater.exe
 
   collect:
     name: Collect
@@ -102,39 +102,39 @@ jobs:
     strategy:
       matrix:
         # target: linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64, android/arm64
-        os: [ linux, windows, darwin ]
-        rustarch: [ i686, x86_64, aarch64 ]
+        os: [linux, windows, darwin]
+        rustarch: [i686, x86_64, aarch64]
         exclude:
           - os: linux
-            rustarch: 'i686'
+            rustarch: "i686"
           - os: windows
             rustarch: aarch64
           - os: darwin
-            rustarch: 'i686'
+            rustarch: "i686"
     steps:
-    - name: Get Files
-      uses: actions/download-artifact@v3
-      with:
-        name: seal-tool-${{ matrix.os }}-${{ matrix.rustarch }}
-        path: ./dist/
+      - name: Get Files
+        uses: actions/download-artifact@v3
+        with:
+          name: seal-tool-${{ matrix.os }}-${{ matrix.rustarch }}
+          path: ./dist/
 
-    - name: Rename
-      if: matrix.os != 'windows'
-      run: |
-        mv ./dist/seal-updater ./dist/seal-updater-${{ matrix.os }}-${{ matrix.rustarch }}
-        echo "DIST=./dist/seal-updater-${{ matrix.os }}-${{ matrix.rustarch }}" >> $GITHUB_ENV;
+      - name: Rename
+        if: matrix.os != 'windows'
+        run: |
+          mv ./dist/seal-updater ./dist/seal-updater-${{ matrix.os }}-${{ matrix.rustarch }}
+          echo "DIST=./dist/seal-updater-${{ matrix.os }}-${{ matrix.rustarch }}" >> $GITHUB_ENV;
 
-    - name: Rename
-      if: matrix.os == 'windows'
-      run: |
-        mv ./dist/seal-updater.exe ./dist/seal-updater-${{ matrix.os }}-${{ matrix.rustarch }}.exe
-        echo "DIST=./dist/seal-updater-${{ matrix.os }}-${{ matrix.rustarch }}.exe" >> $GITHUB_ENV;
+      - name: Rename
+        if: matrix.os == 'windows'
+        run: |
+          mv ./dist/seal-updater.exe ./dist/seal-updater-${{ matrix.os }}-${{ matrix.rustarch }}.exe
+          echo "DIST=./dist/seal-updater-${{ matrix.os }}-${{ matrix.rustarch }}.exe" >> $GITHUB_ENV;
 
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: ${{ env.DIST }}
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: ${{ env.DIST }}
 
   prerelease:
     name: Prerelease
@@ -186,4 +186,4 @@ jobs:
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
           source-dir: ./dist
-          destination-dir: ./u/v0.1.3/
+          destination-dir: ./u/v0.1.4/
