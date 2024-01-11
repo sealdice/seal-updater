@@ -11,6 +11,8 @@ use crate::{
 mod decompress;
 mod progress;
 
+/// The main upgrade executor. It waits for the main process (if specified) to exit,
+/// renames the old file and extracts new file from the package.
 pub fn upgrade() -> Result<(), Box<dyn Error>> {
     let args = &CMD_OPT;
     if args.pid != 0 {

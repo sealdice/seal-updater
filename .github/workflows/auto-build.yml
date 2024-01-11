@@ -186,4 +186,4 @@ jobs:
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
           source-dir: ./dist
-          destination-dir: ./u/v0.1.4/
+          destination-dir: ./u/v0.1.5/

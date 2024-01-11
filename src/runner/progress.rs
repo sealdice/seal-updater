@@ -2,6 +2,7 @@ use std::cmp::max;
 use std::error::Error;
 use std::io::Write;
 
+/// A simple progress bar.
 pub struct ProgressBar {
     max: usize,
     current: usize,
@@ -28,6 +29,7 @@ impl ProgressBar {
         bar_width / 10 * 10
     }
 
+    /// Erases the whole line on terminal.
     pub fn blackout() {
         let width = match term_size::dimensions_stdout() {
             None => 80,
@@ -37,6 +39,7 @@ impl ProgressBar {
         _ = std::io::stdout().flush();
     }
 
+    /// Progresses by one.
     pub fn progress(&mut self) {
         _ = self.progress_by(1);
     }

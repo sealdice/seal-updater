@@ -12,6 +12,7 @@ use crate::global::{CMD_OPT, UPD_NAME};
 
 use super::progress;
 
+/// A wrapper that helps get the count of entries in a GZ archive.
 struct ReseekableArchive(File);
 
 impl ReseekableArchive {
@@ -19,20 +20,28 @@ impl ReseekableArchive {
         Self(file)
     }
 
+    /// Gets the count of entries in this file. Does not consume self.
     fn count(&mut self) -> io::Result<usize> {
+        // `decoder` and `archive` hold a reference to the underlying file.
+        // since they are local, this is fine.
         let decoder = GzDecoder::new(&mut self.0);
         let mut archive = tar::Archive::new(decoder);
+
         let count = archive.entries()?.count();
         self.0.seek(SeekFrom::Start(0))?;
+
         Ok(count)
     }
 
+    /// Consumes self and returns the inner archive.
     fn archive(self) -> tar::Archive<GzDecoder<File>> {
         let decoder = GzDecoder::new(self.0);
         tar::Archive::new(decoder)
     }
 }
 
+/// Extract the content from the archive at `src` to `dst`. The source can be a ZIP or
+/// a TAR file; the ZIP format is tried first, then TAR as fallback.
 pub(crate) fn decompress(
     src: impl AsRef<Path>,
     dst: impl AsRef<Path>,
@@ -60,6 +69,7 @@ pub(crate) fn decompress(
             e
         })?;
         let mut archive = ReseekableArchive::new(file);
+
         let count = archive
             .count()
             .map_err(|e| {
@@ -67,6 +77,7 @@ pub(crate) fn decompress(
                 e
             })
             .unwrap_or(0);
+
         untar(archive.archive(), dst.as_ref(), count)?;
     }
 
@@ -84,11 +95,13 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
             error!("获取 ZIP 文件 entry 时出现错误: {}", e);
             e
         })?;
+
         if CMD_OPT.verbose {
             progress::ProgressBar::blackout();
             println!("  {} {}", "decompressing:".yellow(), zip_file.name());
             _ = io::stdout().flush();
         }
+
         let name = zip_file
             .enclosed_name()
             .ok_or("文件名不安全，可能导致 zip slip")
@@ -96,12 +109,14 @@ fn unzip(file: File, target: &Path) -> Result<(), Box<dyn Error>> {
                 error!("发现不安全的文件名，解压缩终止: {}", e);
                 e
             })?;
+
         let dest = if name.to_string_lossy() != UPD_NAME {
             target.join(name)
         } else {
             target.join("new_updater").join(name)
         };
         make_file(&mut zip_file, &dest)?;
+
         progress_bar.progress();
     }
 
@@ -127,11 +142,13 @@ fn untar<T: Read>(
         error!("获取 GZ 文件 entry 时出现错误: {}", e);
         e
     })?;
+
     for entry in entries {
         let mut tar_file = entry.map_err(|e| {
             error!("获取 GZ 文件 entry 时出现错误: {}", e);
             e
         })?;
+
         let name = tar_file.path().map_err(|e| {
             error!("获取文件名时出现错误: {}", e);
             e
@@ -142,7 +159,6 @@ fn untar<T: Read>(
             println!("  {} {}", "reading:".yellow(), name.to_string_lossy());
             _ = io::stdout().flush();
         }
-        progress_bar.progress();
 
         if !is_path_safe(name.components()) {
             error!("发现不安全的文件名，解压缩终止: {:?}", name);
@@ -155,6 +171,8 @@ fn untar<T: Read>(
             target.join("new_updater").join(name)
         };
         make_file(&mut tar_file, &dest)?;
+
+        progress_bar.progress();
     }
     Ok(())
 }
