@@ -21,10 +21,10 @@ fn main() {
         println!("Working directory: {}", arg.cwd.yellow());
     }
 
-    let ver = env!("CARGO_PKG_VERSION");
+    const VER: &str = env!("CARGO_PKG_VERSION");
     println!(
         "{}",
-        format!("SealDice 升级程序 v{} by 檀轶步棋", ver)
+        format!("SealDice 升级程序 v{} by 檀轶步棋", VER)
             .black()
             .on_yellow()
     );
