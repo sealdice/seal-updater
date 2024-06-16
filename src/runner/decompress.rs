@@ -13,9 +13,9 @@ use crate::global::{CMD_OPT, UPD_NAME};
 use super::progress;
 
 /// A wrapper that helps get the count of entries in a GZ archive.
-struct ReseekableArchive(File);
+struct ResettableTarArchive(File);
 
-impl ReseekableArchive {
+impl ResettableTarArchive {
     fn new(file: File) -> Self {
         Self(file)
     }
@@ -68,7 +68,7 @@ pub(crate) fn decompress(
             error!("未能打开更新压缩包: {}", e);
             e
         })?;
-        let mut archive = ReseekableArchive::new(file);
+        let mut archive = ResettableTarArchive::new(file);
 
         let count = archive
             .count()
