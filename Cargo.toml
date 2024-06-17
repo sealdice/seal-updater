@@ -1,6 +1,6 @@
 [package]
 name = "seal-updater"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["檀轶步棋"]
 edition = "2021"
 
