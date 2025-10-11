@@ -1,3 +1,7 @@
+> [!WARNING]
+> This repository has been archived in favour of sealdice/sealupd \
+> 该仓库已不再维护，请移步 sealdice/sealupd
+
 # seal-updater
 
 海豹的升级程序，负责覆盖文件和重启
